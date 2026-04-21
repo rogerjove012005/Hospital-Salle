@@ -78,7 +78,8 @@ Repositorio base para estructurar el proyecto del **laSalle Health Center** (IA 
 Cuando añadáis los contenedores, la idea es poder levantarlo con un comando:
 
 ```bash
-docker compose up --build
+cd infra/docker
+docker compose --env-file .env.example up --build
 ```
 
 Colocad el `docker-compose.yml` y los Dockerfiles en `infra/docker/` y documentad aquí:

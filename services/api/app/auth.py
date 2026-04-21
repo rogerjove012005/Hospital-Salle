@@ -175,21 +175,30 @@ def create_user(req: CreateUserRequest) -> UserOut:
 
 def register_patient(req: RegisterRequest) -> UserOut:
     # Public registration is limited to "paciente" for safety.
+    #
+    # DB checks:
+    # - email must be unique
+    # - patient_id must exist (or be created as minimal record if missing)
     with engine().begin() as conn:
-        conn.execute(
-            text(
-                """
-                INSERT INTO patients(patient_id)
-                VALUES (:patient_id)
-                ON CONFLICT (patient_id) DO NOTHING
-                """
-            ),
-            {"patient_id": req.patient_id},
-        )
+        existing = conn.execute(
+            text("SELECT 1 FROM app_users WHERE email = :email"),
+            {"email": req.email},
+        ).fetchone()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    return create_user(
-        CreateUserRequest(email=req.email, password=req.password, role="paciente", patient_id=req.patient_id)
-    )
+        patient = conn.execute(
+            text("SELECT 1 FROM patients WHERE patient_id = :pid"),
+            {"pid": req.patient_id},
+        ).fetchone()
+        if not patient:
+            # Minimal patient record for the demo. In a real hospital, this would be pre-provisioned.
+            conn.execute(
+                text("INSERT INTO patients(patient_id) VALUES (:pid)"),
+                {"pid": req.patient_id},
+            )
+
+    return create_user(CreateUserRequest(email=req.email, password=req.password, role="paciente", patient_id=req.patient_id))
 
 
 def list_users() -> list[dict[str, Any]]:

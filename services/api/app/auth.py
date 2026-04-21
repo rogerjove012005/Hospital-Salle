@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import uuid
@@ -8,10 +9,13 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from .db import engine
 from .security import Role, create_access_token, decode_token, hash_password, verify_password
 
+
+log = logging.getLogger(__name__)
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -131,6 +135,26 @@ class SelfRegisterRequest(BaseModel):
 
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
+
+
+def _normalize_phone(phone: str) -> str:
+    """Canonical form for storage and uniqueness (spaces/hyphens removed)."""
+    return re.sub(r"[\s\-]+", "", phone.strip())
+
+
+def _register_integrity_error(exc: IntegrityError) -> HTTPException:
+    raw = str(getattr(exc, "orig", None) or exc).lower()
+    if "app_users" in raw and "email" in raw:
+        return HTTPException(status_code=400, detail="Email ya registrado")
+    if "patients_phone" in raw or ("patients" in raw and "phone" in raw and "unique" in raw):
+        return HTTPException(status_code=400, detail="Teléfono ya registrado")
+    if "patients_pkey" in raw or ("patient_id" in raw and "unique" in raw):
+        return HTTPException(status_code=409, detail="Conflicto de identificador. Vuelve a intentarlo.")
+    log.warning("register_self: unmapped integrity error: %s", exc)
+    return HTTPException(
+        status_code=400,
+        detail="No se pudo completar el registro (datos duplicados o en uso).",
+    )
 
 
 def _age_from_dob(dob: date) -> int:
@@ -275,7 +299,9 @@ def create_user(req: CreateUserRequest) -> UserOut:
                     "patient_id": req.patient_id,
                 },
             )
-        except Exception as e:  # unique violation, etc.
+        except IntegrityError as e:
+            raise _register_integrity_error(e) from e
+        except Exception as e:
             raise HTTPException(status_code=400, detail="User creation failed") from e
 
     return UserOut(user_id=user_id, email=email_norm, role=req.role, patient_id=req.patient_id)
@@ -298,6 +324,8 @@ def _insert_app_user(conn, *, user_id: str, email_norm: str, password: str, role
                 "patient_id": patient_id,
             },
         )
+    except IntegrityError as e:
+        raise _register_integrity_error(e) from e
     except Exception as e:
         raise HTTPException(status_code=400, detail="User creation failed") from e
 
@@ -306,18 +334,63 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
     email_norm = _normalize_email(str(req.email))
     full_name = f"{req.first_name} {req.last_name}".strip()
     age = _age_from_dob(req.date_of_birth)
+    phone_norm = _normalize_phone(req.phone)
 
-    with engine().begin() as conn:
-        existing = conn.execute(text("SELECT 1 FROM app_users WHERE email = :email"), {"email": email_norm}).fetchone()
-        if existing:
-            raise HTTPException(status_code=400, detail="Email already registered")
+    try:
+        with engine().begin() as conn:
+            existing = conn.execute(text("SELECT 1 FROM app_users WHERE email = :email"), {"email": email_norm}).fetchone()
+            if existing:
+                raise HTTPException(status_code=400, detail="Email already registered")
 
-        phone_row = conn.execute(text("SELECT patient_id FROM patients WHERE phone = :phone"), {"phone": req.phone}).fetchone()
-        if phone_row:
-            raise HTTPException(status_code=400, detail="Teléfono ya registrado")
+            phone_row = conn.execute(
+                text(
+                    """
+                    SELECT patient_id FROM patients
+                    WHERE regexp_replace(
+                        regexp_replace(trim(coalesce(phone, '')), '[[:space:]]+', '', 'g'),
+                        '-',
+                        '',
+                        'g'
+                    ) = :phone
+                    """
+                ),
+                {"phone": phone_norm},
+            ).fetchone()
+            if phone_row:
+                raise HTTPException(status_code=400, detail="Teléfono ya registrado")
 
-        if req.role == "paciente":
-            patient_id = _next_patient_id(conn)
+            if req.role == "paciente":
+                patient_id = _next_patient_id(conn)
+                conn.execute(
+                    text(
+                        """
+                        INSERT INTO patients(patient_id, age, sex, full_name, phone, date_of_birth)
+                        VALUES (:patient_id, :age, :sex, :full_name, :phone, :dob)
+                        """
+                    ),
+                    {
+                        "patient_id": patient_id,
+                        "age": age,
+                        "sex": req.sex,
+                        "full_name": full_name,
+                        "phone": phone_norm,
+                        "dob": req.date_of_birth,
+                    },
+                )
+
+                user_id = str(uuid.uuid4())
+                _insert_app_user(
+                    conn,
+                    user_id=user_id,
+                    email_norm=email_norm,
+                    password=req.password,
+                    role="paciente",
+                    patient_id=patient_id,
+                )
+                return UserOut(user_id=user_id, email=email_norm, role="paciente", patient_id=patient_id)
+
+            # medico
+            medico_ref = _next_medico_id(conn)
             conn.execute(
                 text(
                     """
@@ -326,11 +399,11 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
                     """
                 ),
                 {
-                    "patient_id": patient_id,
+                    "patient_id": medico_ref,
                     "age": age,
                     "sex": req.sex,
                     "full_name": full_name,
-                    "phone": req.phone,
+                    "phone": phone_norm,
                     "dob": req.date_of_birth,
                 },
             )
@@ -341,40 +414,12 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
                 user_id=user_id,
                 email_norm=email_norm,
                 password=req.password,
-                role="paciente",
-                patient_id=patient_id,
+                role="medico",
+                patient_id=None,
             )
-            return UserOut(user_id=user_id, email=email_norm, role="paciente", patient_id=patient_id)
-
-        # medico
-        medico_ref = _next_medico_id(conn)
-        conn.execute(
-            text(
-                """
-                INSERT INTO patients(patient_id, age, sex, full_name, phone, date_of_birth)
-                VALUES (:patient_id, :age, :sex, :full_name, :phone, :dob)
-                """
-            ),
-            {
-                "patient_id": medico_ref,
-                "age": age,
-                "sex": req.sex,
-                "full_name": full_name,
-                "phone": req.phone,
-                "dob": req.date_of_birth,
-            },
-        )
-
-        user_id = str(uuid.uuid4())
-        _insert_app_user(
-            conn,
-            user_id=user_id,
-            email_norm=email_norm,
-            password=req.password,
-            role="medico",
-            patient_id=None,
-        )
-        return UserOut(user_id=user_id, email=email_norm, role="medico", patient_id=None)
+            return UserOut(user_id=user_id, email=email_norm, role="medico", patient_id=None)
+    except IntegrityError as e:
+        raise _register_integrity_error(e) from e
 
 
 def list_users() -> list[dict[str, Any]]:

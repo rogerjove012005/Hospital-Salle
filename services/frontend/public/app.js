@@ -2,7 +2,8 @@ const API_BASE = window.API_BASE_URL || "http://localhost:8000";
 
 const qs = (s) => document.querySelector(s);
 const output = qs("#output");
-const apiStatus = qs("#apiStatus");
+const statusEl = qs("#status");
+const sessionPanel = qs("#sessionPanel");
 
 const tabLogin = qs("#tabLogin");
 const tabRegister = qs("#tabRegister");
@@ -17,6 +18,13 @@ const btnLogout = qs("#btnLogout");
 
 function setOutput(obj) {
   output.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+}
+
+function setStatus(message, kind = "neutral") {
+  statusEl.textContent = message || "";
+  statusEl.classList.remove("ok", "error");
+  if (kind === "ok") statusEl.classList.add("ok");
+  if (kind === "error") statusEl.classList.add("error");
 }
 
 function getToken() {
@@ -42,7 +50,8 @@ async function api(path, opts = {}) {
     body = text;
   }
   if (!res.ok) {
-    throw new Error(typeof body === "string" ? body : JSON.stringify(body));
+    const msg = typeof body === "string" ? body : (body && body.detail) ? body.detail : JSON.stringify(body);
+    throw new Error(msg);
   }
   return body;
 }
@@ -53,6 +62,14 @@ function setTab(which) {
   tabRegister.classList.toggle("active", !isLogin);
   panelLogin.classList.toggle("hidden", !isLogin);
   panelRegister.classList.toggle("hidden", isLogin);
+  setStatus("");
+  if (isLogin) {
+    qs("h1").textContent = "Iniciar sesión";
+    qs(".header .muted").textContent = "Accede a tu cuenta para continuar.";
+  } else {
+    qs("h1").textContent = "Crear cuenta";
+    qs(".header .muted").textContent = "Registra tu cuenta de paciente.";
+  }
 }
 
 tabLogin.addEventListener("click", () => setTab("login"));
@@ -65,14 +82,16 @@ loginForm.addEventListener("submit", async (e) => {
   const password = form.get("password");
 
   try {
+    setStatus("Entrando…");
     const data = await api("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
     setToken(data.access_token);
-    setOutput({ ok: true, action: "login", token_saved: true });
+    setStatus("Sesión iniciada.", "ok");
+    sessionPanel.classList.remove("hidden");
   } catch (err) {
-    setOutput({ ok: false, action: "login", error: String(err.message || err) });
+    setStatus(String(err.message || err), "error");
   }
 });
 
@@ -84,38 +103,46 @@ registerForm.addEventListener("submit", async (e) => {
   const patient_id = form.get("patient_id");
 
   try {
+    setStatus("Creando cuenta…");
     const data = await api("/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password, patient_id }),
     });
-    setOutput({ ok: true, action: "register", user: data });
+    setStatus("Cuenta creada. Ya puedes iniciar sesión.", "ok");
+    setTab("login");
   } catch (err) {
-    setOutput({ ok: false, action: "register", error: String(err.message || err) });
+    setStatus(String(err.message || err), "error");
   }
 });
 
 btnMe.addEventListener("click", async () => {
   try {
     const me = await api("/auth/me");
-    setOutput({ ok: true, me });
+    output.classList.remove("hidden");
+    setOutput(me);
   } catch (err) {
-    setOutput({ ok: false, error: String(err.message || err) });
+    setStatus(String(err.message || err), "error");
   }
 });
 
 btnLogout.addEventListener("click", () => {
   setToken(null);
-  setOutput({ ok: true, action: "logout" });
+  output.classList.add("hidden");
+  setOutput("{}");
+  sessionPanel.classList.add("hidden");
+  setStatus("Sesión cerrada.", "ok");
 });
 
 async function boot() {
   try {
     await api("/health");
-    apiStatus.textContent = "API: OK";
-    apiStatus.style.borderColor = "rgba(47, 224, 143, 0.55)";
+    // ok
   } catch {
-    apiStatus.textContent = "API: OFF";
-    apiStatus.style.borderColor = "rgba(255, 92, 122, 0.55)";
+    setStatus("No se puede conectar con el servidor.", "error");
+  }
+
+  if (getToken()) {
+    sessionPanel.classList.remove("hidden");
   }
 }
 

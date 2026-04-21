@@ -10,22 +10,22 @@
     <main class="card">
       <header class="header">
         <div>
-          <h1>Hospital Salle</h1>
-          <p class="muted">Login y registro (admin / médico / paciente)</p>
+          <div class="kicker">laSalle Health Center</div>
+          <h1>Iniciar sesión</h1>
+          <p class="muted">Accede a tu cuenta para continuar.</p>
         </div>
-        <div class="pill" id="apiStatus">API: ?</div>
       </header>
 
       <section class="tabs">
-        <button class="tab active" id="tabLogin">Login</button>
-        <button class="tab" id="tabRegister">Register (paciente)</button>
+        <button class="tab active" id="tabLogin" type="button">Iniciar sesión</button>
+        <button class="tab" id="tabRegister" type="button">Crear cuenta</button>
       </section>
 
       <section id="panelLogin">
         <form id="loginForm">
           <label>Email</label>
           <input name="email" type="email" placeholder="tu@email.com" required />
-          <label>Password</label>
+          <label>Contraseña</label>
           <input name="password" type="password" placeholder="••••••••" required />
           <button type="submit">Entrar</button>
         </form>
@@ -35,26 +35,26 @@
         <form id="registerForm">
           <label>Email</label>
           <input name="email" type="email" placeholder="paciente@email.com" required />
-          <label>Password</label>
+          <label>Contraseña</label>
           <input name="password" type="password" placeholder="••••••••" required />
-          <label>Patient ID</label>
+          <label>ID de paciente</label>
           <input name="patient_id" type="text" placeholder="P000001" required />
           <button type="submit">Crear cuenta</button>
-          <p class="muted small">El registro público crea usuarios con rol <b>paciente</b>.</p>
+          <p class="muted small">Usa el ID de paciente asignado por el hospital.</p>
         </form>
       </section>
 
-      <section class="session">
-        <div class="row">
-          <button id="btnMe" class="secondary">Ver /auth/me</button>
-          <button id="btnLogout" class="secondary">Logout</button>
-        </div>
-        <pre id="output" class="output">{}</pre>
+      <section class="status">
+        <div id="status" class="statusText muted" aria-live="polite"></div>
       </section>
 
-      <footer class="footer muted small">
-        Tip: prueba admin con <code>rogerjove012005@gmail.com</code> / <code>hospital</code> (si está seed).
-      </footer>
+      <section class="session hidden" id="sessionPanel">
+        <div class="row">
+          <button id="btnMe" class="secondary" type="button">Ver mi perfil</button>
+          <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
+        </div>
+        <pre id="output" class="output hidden">{}</pre>
+      </section>
     </main>
 
     <script src="/app.js"></script>

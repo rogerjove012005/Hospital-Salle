@@ -44,6 +44,10 @@ class RegisterRequest(BaseModel):
     patient_id: str
 
 
+def _normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
 def ensure_admin_seed() -> None:
     admin_email = os.getenv("ADMIN_EMAIL")
     admin_password = os.getenv("ADMIN_PASSWORD")
@@ -53,7 +57,7 @@ def ensure_admin_seed() -> None:
     with engine().begin() as conn:
         row = conn.execute(
             text("SELECT user_id FROM app_users WHERE email = :email"),
-            {"email": admin_email},
+            {"email": _normalize_email(admin_email)},
         ).fetchone()
         if row:
             return
@@ -67,13 +71,14 @@ def ensure_admin_seed() -> None:
             ),
             {
                 "user_id": str(uuid.uuid4()),
-                "email": admin_email,
+                "email": _normalize_email(admin_email),
                 "password_hash": hash_password(admin_password),
             },
         )
 
 
 def authenticate(email: str, password: str) -> tuple[str, Role, str | None]:
+    email_norm = _normalize_email(email)
     with engine().connect() as conn:
         row = conn.execute(
             text(
@@ -83,15 +88,15 @@ def authenticate(email: str, password: str) -> tuple[str, Role, str | None]:
                 WHERE email = :email
                 """
             ),
-            {"email": email},
+            {"email": email_norm},
         ).fetchone()
 
     if not row:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=404, detail="No existe una cuenta con ese email")
 
     password_hash_db: str = row.password_hash
     if not verify_password(password, password_hash_db):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
     return str(row.user_id), row.role, row.patient_id
 
@@ -150,6 +155,7 @@ def require_roles(*allowed: Role):
 
 def create_user(req: CreateUserRequest) -> UserOut:
     user_id = str(uuid.uuid4())
+    email_norm = _normalize_email(req.email)
     with engine().begin() as conn:
         try:
             conn.execute(
@@ -161,7 +167,7 @@ def create_user(req: CreateUserRequest) -> UserOut:
                 ),
                 {
                     "user_id": user_id,
-                    "email": req.email,
+                    "email": email_norm,
                     "password_hash": hash_password(req.password),
                     "role": req.role,
                     "patient_id": req.patient_id,
@@ -170,7 +176,7 @@ def create_user(req: CreateUserRequest) -> UserOut:
         except Exception as e:  # unique violation, etc.
             raise HTTPException(status_code=400, detail="User creation failed") from e
 
-    return UserOut(user_id=user_id, email=req.email, role=req.role, patient_id=req.patient_id)
+    return UserOut(user_id=user_id, email=email_norm, role=req.role, patient_id=req.patient_id)
 
 
 def register_patient(req: RegisterRequest) -> UserOut:
@@ -182,7 +188,7 @@ def register_patient(req: RegisterRequest) -> UserOut:
     with engine().begin() as conn:
         existing = conn.execute(
             text("SELECT 1 FROM app_users WHERE email = :email"),
-            {"email": req.email},
+            {"email": _normalize_email(req.email)},
         ).fetchone()
         if existing:
             raise HTTPException(status_code=400, detail="Email already registered")

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hospital Salle — Login</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <header class="header">
+        <div>
+          <h1>Hospital Salle</h1>
+          <p class="muted">Login y registro (admin / médico / paciente)</p>
+        </div>
+        <div class="pill" id="apiStatus">API: ?</div>
+      </header>
+
+      <section class="tabs">
+        <button class="tab active" id="tabLogin">Login</button>
+        <button class="tab" id="tabRegister">Register (paciente)</button>
+      </section>
+
+      <section id="panelLogin">
+        <form id="loginForm">
+          <label>Email</label>
+          <input name="email" type="email" placeholder="tu@email.com" required />
+          <label>Password</label>
+          <input name="password" type="password" placeholder="••••••••" required />
+          <button type="submit">Entrar</button>
+        </form>
+      </section>
+
+      <section id="panelRegister" class="hidden">
+        <form id="registerForm">
+          <label>Email</label>
+          <input name="email" type="email" placeholder="paciente@email.com" required />
+          <label>Password</label>
+          <input name="password" type="password" placeholder="••••••••" required />
+          <label>Patient ID</label>
+          <input name="patient_id" type="text" placeholder="P000001" required />
+          <button type="submit">Crear cuenta</button>
+          <p class="muted small">El registro público crea usuarios con rol <b>paciente</b>.</p>
+        </form>
+      </section>
+
+      <section class="session">
+        <div class="row">
+          <button id="btnMe" class="secondary">Ver /auth/me</button>
+          <button id="btnLogout" class="secondary">Logout</button>
+        </div>
+        <pre id="output" class="output">{}</pre>
+      </section>
+
+      <footer class="footer muted small">
+        Tip: prueba admin con <code>rogerjove012005@gmail.com</code> / <code>hospital</code> (si está seed).
+      </footer>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

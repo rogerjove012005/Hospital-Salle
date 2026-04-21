@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import text
 
 from .db import engine
@@ -13,10 +13,12 @@ from .security import Role, create_access_token, decode_token, hash_password, ve
 
 bearer = HTTPBearer(auto_error=False)
 
+_PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$"
+
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=128)
 
 
 class TokenResponse(BaseModel):
@@ -32,16 +34,16 @@ class UserOut(BaseModel):
 
 
 class CreateUserRequest(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128, pattern=_PASSWORD_REGEX)
     role: Role
-    patient_id: str | None = None
+    patient_id: str | None = Field(default=None, min_length=3, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
 class RegisterRequest(BaseModel):
-    email: str
-    password: str
-    patient_id: str
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128, pattern=_PASSWORD_REGEX)
+    patient_id: str = Field(min_length=3, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
 def _normalize_email(email: str) -> str:

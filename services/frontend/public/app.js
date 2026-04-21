@@ -36,6 +36,22 @@ function setToken(token) {
   else localStorage.setItem("access_token", token);
 }
 
+function formatApiDetail(detail) {
+  if (!detail) return "Error desconocido";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => {
+        const loc = Array.isArray(d.loc) ? d.loc.filter((x) => x !== "body").join(".") : "";
+        const msg = d.msg || "";
+        return loc ? `${loc}: ${msg}` : msg;
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  return JSON.stringify(detail);
+}
+
 async function api(path, opts = {}) {
   const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
   const token = getToken();
@@ -50,7 +66,12 @@ async function api(path, opts = {}) {
     body = text;
   }
   if (!res.ok) {
-    const msg = typeof body === "string" ? body : (body && body.detail) ? body.detail : JSON.stringify(body);
+    const msg =
+      typeof body === "string"
+        ? body
+        : body && Object.prototype.hasOwnProperty.call(body, "detail")
+          ? formatApiDetail(body.detail)
+          : JSON.stringify(body);
     throw new Error(msg);
   }
   return body;

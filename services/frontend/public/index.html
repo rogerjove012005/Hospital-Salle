@@ -24,9 +24,9 @@
       <section id="panelLogin">
         <form id="loginForm">
           <label>Email</label>
-          <input name="email" type="email" placeholder="tu@email.com" required />
+          <input name="email" type="email" autocomplete="username" placeholder="tu@email.com" required />
           <label>Contraseña</label>
-          <input name="password" type="password" placeholder="••••••••" required />
+          <input name="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
           <button type="submit">Entrar</button>
         </form>
       </section>
@@ -34,11 +34,31 @@
       <section id="panelRegister" class="hidden">
         <form id="registerForm">
           <label>Email</label>
-          <input name="email" type="email" placeholder="paciente@email.com" required />
+          <input name="email" type="email" autocomplete="username" placeholder="paciente@email.com" required />
           <label>Contraseña</label>
-          <input name="password" type="password" placeholder="••••••••" required />
+          <input
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            minlength="8"
+            maxlength="128"
+            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$"
+            title="Mínimo 8 caracteres, con mayúscula, minúscula, número y un símbolo"
+            placeholder="••••••••"
+            required
+          />
           <label>ID de paciente</label>
-          <input name="patient_id" type="text" placeholder="P000001" required />
+          <input
+            name="patient_id"
+            type="text"
+            autocomplete="off"
+            minlength="3"
+            maxlength="64"
+            pattern="^[A-Za-z0-9][A-Za-z0-9_-]*$"
+            title="Letras/números; puede incluir _ o -; no empieces con _ o -"
+            placeholder="P000001"
+            required
+          />
           <button type="submit">Crear cuenta</button>
           <p class="muted small">Usa el ID de paciente asignado por el hospital.</p>
         </form>

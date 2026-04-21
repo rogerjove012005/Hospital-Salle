@@ -6,3 +6,4 @@ minio
 passlib[bcrypt]
 python-jose[cryptography]
 bcrypt<4.1
+email-validator

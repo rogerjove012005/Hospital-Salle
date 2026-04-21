@@ -8,13 +8,13 @@ from sqlalchemy import text
 from .auth import (
     CreateUserRequest,
     LoginRequest,
-    RegisterRequest,
+    SelfRegisterRequest,
     TokenResponse,
     UserOut,
     create_user,
     ensure_admin_seed,
     get_current_user,
-    register_patient,
+    register_self,
     list_users,
     login,
     require_roles,
@@ -24,9 +24,19 @@ from .db import engine, init_auth_schema
 
 app = FastAPI(title="Hospital Support API", version="0.1.0")
 
+_cors = os.getenv("CORS_ALLOW_ORIGIN", "*")
+if _cors.strip() == "*":
+    _allow_origins = ["*"]
+    _allow_origin_regex = None
+else:
+    # Comma-separated list, e.g. "http://localhost:3000,http://127.0.0.1:3000"
+    _allow_origins = [o.strip() for o in _cors.split(",") if o.strip()]
+    _allow_origin_regex = None
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("CORS_ALLOW_ORIGIN", "*")],
+    allow_origins=_allow_origins,
+    allow_origin_regex=_allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,8 +90,8 @@ def auth_login(req: LoginRequest):
 
 
 @app.post("/auth/register", response_model=UserOut)
-def auth_register(req: RegisterRequest):
-    return register_patient(req)
+def auth_register(req: SelfRegisterRequest):
+    return register_self(req)
 
 
 @app.get("/auth/me", response_model=UserOut)
@@ -103,7 +113,13 @@ def admin_list_users(_admin: UserOut = Depends(require_roles("admin"))):
 def list_patients(_user: UserOut = Depends(require_roles("admin", "medico"))):
     with engine().connect() as conn:
         rows = conn.execute(
-            text("SELECT patient_id, age, sex, created_at FROM patients ORDER BY created_at DESC")
+            text(
+                """
+                SELECT patient_id, age, sex, full_name, phone, date_of_birth, created_at
+                FROM patients
+                ORDER BY created_at DESC
+                """
+            )
         ).mappings().all()
     return [dict(r) for r in rows]
 
@@ -114,7 +130,13 @@ def get_my_patient(user: UserOut = Depends(require_roles("paciente"))):
         return None
     with engine().connect() as conn:
         row = conn.execute(
-            text("SELECT patient_id, age, sex, created_at FROM patients WHERE patient_id = :pid"),
+            text(
+                """
+                SELECT patient_id, age, sex, full_name, phone, date_of_birth, created_at
+                FROM patients
+                WHERE patient_id = :pid
+                """
+            ),
             {"pid": user.patient_id},
         ).mappings().fetchone()
     return dict(row) if row else None

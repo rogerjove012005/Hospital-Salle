@@ -1,10 +1,11 @@
 import os
 import uuid
-from typing import Annotated, Any
+from datetime import date
+from typing import Annotated, Any, Literal
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import text
 
 from .db import engine
@@ -37,17 +38,61 @@ class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128, pattern=_PASSWORD_REGEX)
     role: Role
-    patient_id: str | None = Field(default=None, min_length=3, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+    patient_id: str | None = None
+
+    @field_validator("patient_id")
+    @classmethod
+    def validate_patient_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v2 = v.strip()
+        if len(v2) < 3 or len(v2) > 64:
+            raise ValueError("patient_id inválido")
+        import re
+
+        if not re.fullmatch(r"^[A-Za-z0-9][A-Za-z0-9_-]*$", v2):
+            raise ValueError("patient_id inválido")
+        return v2
 
 
-class RegisterRequest(BaseModel):
+class SelfRegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128, pattern=_PASSWORD_REGEX)
-    patient_id: str = Field(min_length=3, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+    role: Literal["paciente", "medico"]
+
+    first_name: str = Field(min_length=1, max_length=80)
+    last_name: str = Field(min_length=1, max_length=80)
+    phone: str = Field(min_length=6, max_length=30, pattern=r"^\+?[0-9][0-9\s\-]{5,29}$")
+    date_of_birth: date
+    sex: Literal["M", "F", "O"]
+
+    @field_validator("first_name", "last_name")
+    @classmethod
+    def strip_names(cls, v: str) -> str:
+        v2 = v.strip()
+        if not v2:
+            raise ValueError("Campo obligatorio")
+        return v2
 
 
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
+
+
+def _age_from_dob(dob: date) -> int:
+    today = date.today()
+    years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    return max(0, years)
+
+
+def _next_patient_id(conn) -> str:
+    n = conn.execute(text("SELECT nextval('patient_id_seq')")).scalar_one()
+    return f"P{int(n):06d}"
+
+
+def _next_medico_id(conn) -> str:
+    n = conn.execute(text("SELECT nextval('medico_id_seq')")).scalar_one()
+    return f"M{int(n):06d}"
 
 
 def ensure_admin_seed() -> None:
@@ -158,6 +203,7 @@ def require_roles(*allowed: Role):
 def create_user(req: CreateUserRequest) -> UserOut:
     user_id = str(uuid.uuid4())
     email_norm = _normalize_email(req.email)
+    password_hash = hash_password(req.password)
     with engine().begin() as conn:
         try:
             conn.execute(
@@ -170,7 +216,7 @@ def create_user(req: CreateUserRequest) -> UserOut:
                 {
                     "user_id": user_id,
                     "email": email_norm,
-                    "password_hash": hash_password(req.password),
+                    "password_hash": password_hash,
                     "role": req.role,
                     "patient_id": req.patient_id,
                 },
@@ -181,32 +227,100 @@ def create_user(req: CreateUserRequest) -> UserOut:
     return UserOut(user_id=user_id, email=email_norm, role=req.role, patient_id=req.patient_id)
 
 
-def register_patient(req: RegisterRequest) -> UserOut:
-    # Public registration is limited to "paciente" for safety.
-    #
-    # DB checks:
-    # - email must be unique
-    # - patient_id must exist (or be created as minimal record if missing)
+def _insert_app_user(conn, *, user_id: str, email_norm: str, password: str, role: Role, patient_id: str | None) -> None:
+    try:
+        conn.execute(
+            text(
+                """
+                INSERT INTO app_users(user_id, email, password_hash, role, patient_id)
+                VALUES (:user_id, :email, :password_hash, :role, :patient_id)
+                """
+            ),
+            {
+                "user_id": user_id,
+                "email": email_norm,
+                "password_hash": hash_password(password),
+                "role": role,
+                "patient_id": patient_id,
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="User creation failed") from e
+
+
+def register_self(req: SelfRegisterRequest) -> UserOut:
+    email_norm = _normalize_email(str(req.email))
+    full_name = f"{req.first_name} {req.last_name}".strip()
+    age = _age_from_dob(req.date_of_birth)
+
     with engine().begin() as conn:
-        existing = conn.execute(
-            text("SELECT 1 FROM app_users WHERE email = :email"),
-            {"email": _normalize_email(req.email)},
-        ).fetchone()
+        existing = conn.execute(text("SELECT 1 FROM app_users WHERE email = :email"), {"email": email_norm}).fetchone()
         if existing:
             raise HTTPException(status_code=400, detail="Email already registered")
 
-        patient = conn.execute(
-            text("SELECT 1 FROM patients WHERE patient_id = :pid"),
-            {"pid": req.patient_id},
-        ).fetchone()
-        if not patient:
-            # Minimal patient record for the demo. In a real hospital, this would be pre-provisioned.
+        phone_row = conn.execute(text("SELECT patient_id FROM patients WHERE phone = :phone"), {"phone": req.phone}).fetchone()
+        if phone_row:
+            raise HTTPException(status_code=400, detail="Teléfono ya registrado")
+
+        if req.role == "paciente":
+            patient_id = _next_patient_id(conn)
             conn.execute(
-                text("INSERT INTO patients(patient_id) VALUES (:pid)"),
-                {"pid": req.patient_id},
+                text(
+                    """
+                    INSERT INTO patients(patient_id, age, sex, full_name, phone, date_of_birth)
+                    VALUES (:patient_id, :age, :sex, :full_name, :phone, :dob)
+                    """
+                ),
+                {
+                    "patient_id": patient_id,
+                    "age": age,
+                    "sex": req.sex,
+                    "full_name": full_name,
+                    "phone": req.phone,
+                    "dob": req.date_of_birth,
+                },
             )
 
-    return create_user(CreateUserRequest(email=req.email, password=req.password, role="paciente", patient_id=req.patient_id))
+            user_id = str(uuid.uuid4())
+            _insert_app_user(
+                conn,
+                user_id=user_id,
+                email_norm=email_norm,
+                password=req.password,
+                role="paciente",
+                patient_id=patient_id,
+            )
+            return UserOut(user_id=user_id, email=email_norm, role="paciente", patient_id=patient_id)
+
+        # medico
+        medico_ref = _next_medico_id(conn)
+        conn.execute(
+            text(
+                """
+                INSERT INTO patients(patient_id, age, sex, full_name, phone, date_of_birth)
+                VALUES (:patient_id, :age, :sex, :full_name, :phone, :dob)
+                """
+            ),
+            {
+                "patient_id": medico_ref,
+                "age": age,
+                "sex": req.sex,
+                "full_name": full_name,
+                "phone": req.phone,
+                "dob": req.date_of_birth,
+            },
+        )
+
+        user_id = str(uuid.uuid4())
+        _insert_app_user(
+            conn,
+            user_id=user_id,
+            email_norm=email_norm,
+            password=req.password,
+            role="medico",
+            patient_id=None,
+        )
+        return UserOut(user_id=user_id, email=email_norm, role="medico", patient_id=None)
 
 
 def list_users() -> list[dict[str, Any]]:

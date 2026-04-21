@@ -44,6 +44,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-rogerjove012005@gmail.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-hospital}
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-http://localhost:3000,http://127.0.0.1:3000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,7 +70,7 @@ services:
     build:
       context: ../../services/frontend
     environment:
-      API_BASE_URL: "http://localhost:${API_PORT:-8000}"
+      API_BASE_URL: ${PUBLIC_API_BASE_URL:-http://host.docker.internal:${API_PORT:-8000}}
     depends_on:
       - api
     ports:

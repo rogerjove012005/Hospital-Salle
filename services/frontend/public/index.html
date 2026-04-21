@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hospital Salle — Login</title>
     <link rel="stylesheet" href="/styles.css" />
+    <script src="/config.js"></script>
   </head>
   <body>
     <main class="card">
@@ -33,6 +34,31 @@
 
       <section id="panelRegister" class="hidden">
         <form id="registerForm">
+          <label>Tipo de cuenta</label>
+          <select name="role" required>
+            <option value="paciente" selected>Paciente</option>
+            <option value="medico">Médico</option>
+          </select>
+
+          <label>Nombre</label>
+          <input name="first_name" type="text" autocomplete="given-name" required />
+
+          <label>Apellidos</label>
+          <input name="last_name" type="text" autocomplete="family-name" required />
+
+          <label>Teléfono</label>
+          <input name="phone" type="tel" autocomplete="tel" placeholder="+34 600 000 000" required />
+
+          <label>Fecha de nacimiento</label>
+          <input name="date_of_birth" type="date" required />
+
+          <label>Sexo</label>
+          <select name="sex" required>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+            <option value="O">Otro / Prefiero no decir</option>
+          </select>
+
           <label>Email</label>
           <input name="email" type="email" autocomplete="username" placeholder="paciente@email.com" required />
           <label>Contraseña</label>
@@ -47,20 +73,8 @@
             placeholder="••••••••"
             required
           />
-          <label>ID de paciente</label>
-          <input
-            name="patient_id"
-            type="text"
-            autocomplete="off"
-            minlength="3"
-            maxlength="64"
-            pattern="^[A-Za-z0-9][A-Za-z0-9_-]*$"
-            title="Letras/números; puede incluir _ o -; no empieces con _ o -"
-            placeholder="P000001"
-            required
-          />
           <button type="submit">Crear cuenta</button>
-          <p class="muted small">Usa el ID de paciente asignado por el hospital.</p>
+          <p class="muted small">El ID de paciente se genera automáticamente al registrarte.</p>
         </form>
       </section>
 

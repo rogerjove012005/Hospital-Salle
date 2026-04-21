@@ -104,7 +104,8 @@ form {
 
 label { font-size: 12px; color: var(--muted); }
 
-input {
+input,
+select {
   padding: 11px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -114,7 +115,8 @@ input {
   transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
 }
 
-input:focus {
+input:focus,
+select:focus {
   border-color: rgba(154, 168, 255, 0.40);
   box-shadow: 0 0 0 4px var(--ring);
   background: rgba(255,255,255,0.03);

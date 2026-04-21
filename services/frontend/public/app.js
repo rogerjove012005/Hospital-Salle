@@ -126,15 +126,29 @@ loginForm.addEventListener("submit", async (e) => {
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = new FormData(registerForm);
+  const role = form.get("role");
+  const first_name = form.get("first_name");
+  const last_name = form.get("last_name");
+  const phone = form.get("phone");
+  const date_of_birth = form.get("date_of_birth");
+  const sex = form.get("sex");
   const email = form.get("email");
   const password = form.get("password");
-  const patient_id = form.get("patient_id");
 
   try {
     setStatus("Creando cuenta…");
     const data = await api("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, patient_id }),
+      body: JSON.stringify({
+        email,
+        password,
+        role,
+        first_name,
+        last_name,
+        phone,
+        date_of_birth,
+        sex,
+      }),
     });
     setStatus("Cuenta creada. Ya puedes iniciar sesión.", "ok");
     setTab("login");

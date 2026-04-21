@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hospital Salle — Inicio</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <header class="header">
+        <div>
+          <div class="kicker">laSalle Health Center</div>
+          <h1>Bienvenido</h1>
+          <p class="muted" id="subtitle">Cargando tu sesión…</p>
+        </div>
+      </header>
+
+      <section class="landing">
+        <div class="kv">
+          <div class="k">Email</div>
+          <div class="v" id="email">—</div>
+
+          <div class="k">Rol</div>
+          <div class="v" id="role">—</div>
+
+          <div class="k">Paciente</div>
+          <div class="v" id="patient">—</div>
+        </div>
+
+        <div class="row" style="margin-top: 14px">
+          <button id="btnContinue" type="button">Continuar</button>
+          <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
+        </div>
+
+        <section class="status" style="margin-top: 12px">
+          <div id="status" class="statusText muted" aria-live="polite"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/landing.js"></script>
+  </body>
+</html>

@@ -16,6 +16,14 @@ const registerForm = qs("#registerForm");
 const btnMe = qs("#btnMe");
 const btnLogout = qs("#btnLogout");
 
+function shouldSkipLandingRedirect() {
+  return new URLSearchParams(window.location.search).get("noredirect") === "1";
+}
+
+function goToLanding() {
+  window.location.href = "/landing.html";
+}
+
 function setOutput(obj) {
   output.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
 }
@@ -109,8 +117,7 @@ loginForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({ email, password }),
     });
     setToken(data.access_token);
-    setStatus("Sesión iniciada.", "ok");
-    sessionPanel.classList.remove("hidden");
+    goToLanding();
   } catch (err) {
     setStatus(String(err.message || err), "error");
   }
@@ -160,6 +167,11 @@ async function boot() {
     // ok
   } catch {
     setStatus("No se puede conectar con el servidor.", "error");
+  }
+
+  if (getToken() && !shouldSkipLandingRedirect()) {
+    goToLanding();
+    return;
   }
 
   if (getToken()) {

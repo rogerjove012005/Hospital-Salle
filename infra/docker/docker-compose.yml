@@ -70,9 +70,7 @@ services:
     build:
       context: ../../services/frontend
     environment:
-      API_BASE_URL: ${PUBLIC_API_BASE_URL:-http://host.docker.internal:${API_PORT:-8000}}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      API_BASE_URL: ${API_BASE_URL:-/api}
     depends_on:
       - api
     ports:

@@ -1,4 +1,9 @@
-const API_BASE = window.API_BASE_URL || "http://localhost:8000";
+function apiBase() {
+  const raw = window.API_BASE_URL || "/api";
+  return String(raw).replace(/\/+$/, "");
+}
+
+const API_BASE = apiBase();
 
 const qs = (s) => document.querySelector(s);
 const output = qs("#output");
@@ -65,7 +70,15 @@ async function api(path, opts = {}) {
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, Object.assign({}, opts, { headers }));
+  const url = `${API_BASE}${path}`;
+  let res;
+  try {
+    res = await fetch(url, Object.assign({}, opts, { headers }));
+  } catch (e) {
+    const name = e && e.name ? e.name : "Error";
+    const msg = e && e.message ? e.message : String(e);
+    throw new Error(`Red: ${name}: ${msg} (url=${url})`);
+  }
   const text = await res.text();
   let body = null;
   try {
@@ -80,7 +93,7 @@ async function api(path, opts = {}) {
         : body && Object.prototype.hasOwnProperty.call(body, "detail")
           ? formatApiDetail(body.detail)
           : JSON.stringify(body);
-    throw new Error(msg);
+    throw new Error(`HTTP ${res.status}: ${msg} (url=${url})`);
   }
   return body;
 }

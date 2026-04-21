@@ -15,7 +15,8 @@ from .security import Role, create_access_token, decode_token, hash_password, ve
 
 bearer = HTTPBearer(auto_error=False)
 
-_PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$"
+_PASSWORD_MIN_LEN = 8
+_PASSWORD_MAX_LEN = 128
 
 
 class LoginRequest(BaseModel):
@@ -37,9 +38,24 @@ class UserOut(BaseModel):
 
 class CreateUserRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128, pattern=_PASSWORD_REGEX)
+    password: str = Field(min_length=_PASSWORD_MIN_LEN, max_length=_PASSWORD_MAX_LEN)
     role: Role
     patient_id: str | None = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if len(v) < _PASSWORD_MIN_LEN or len(v) > _PASSWORD_MAX_LEN:
+            raise ValueError("Contraseña inválida")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("La contraseña debe incluir una letra minúscula")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("La contraseña debe incluir una letra mayúscula")
+        if not re.search(r"\d", v):
+            raise ValueError("La contraseña debe incluir un número")
+        if not re.search(r"[^A-Za-z0-9]", v):
+            raise ValueError("La contraseña debe incluir un símbolo")
+        return v
 
     @field_validator("patient_id")
     @classmethod
@@ -49,8 +65,6 @@ class CreateUserRequest(BaseModel):
         v2 = v.strip()
         if len(v2) < 3 or len(v2) > 64:
             raise ValueError("patient_id inválido")
-        import re
-
         if not re.fullmatch(r"^[A-Za-z0-9][A-Za-z0-9_-]*$", v2):
             raise ValueError("patient_id inválido")
         return v2
@@ -58,7 +72,7 @@ class CreateUserRequest(BaseModel):
 
 class SelfRegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128, pattern=_PASSWORD_REGEX)
+    password: str = Field(min_length=_PASSWORD_MIN_LEN, max_length=_PASSWORD_MAX_LEN)
     role: Literal["paciente", "medico"]
 
     first_name: str = Field(min_length=1, max_length=80)
@@ -66,6 +80,22 @@ class SelfRegisterRequest(BaseModel):
     phone: str = Field(min_length=6, max_length=30, pattern=r"^\+?[0-9][0-9\s\-]{5,29}$")
     date_of_birth: date
     sex: Literal["M", "F", "O"]
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        # Keep rules aligned with CreateUserRequest (and avoid pydantic-core unsupported lookaheads)
+        if len(v) < _PASSWORD_MIN_LEN or len(v) > _PASSWORD_MAX_LEN:
+            raise ValueError("Contraseña inválida")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("La contraseña debe incluir una letra minúscula")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("La contraseña debe incluir una letra mayúscula")
+        if not re.search(r"\d", v):
+            raise ValueError("La contraseña debe incluir un número")
+        if not re.search(r"[^A-Za-z0-9]", v):
+            raise ValueError("La contraseña debe incluir un símbolo")
+        return v
 
     @field_validator("first_name", "last_name")
     @classmethod

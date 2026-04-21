@@ -15,7 +15,9 @@ server {
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_pass $api_upstream/;
+    # Strip the browser-facing `/api` prefix before forwarding to FastAPI (routes are `/health`, `/auth/...`, etc.)
+    rewrite ^/api/?(.*)$ /$1 break;
+    proxy_pass $api_upstream;
   }
 
   location = /landing.html {

@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 from datetime import date
 from typing import Annotated, Any, Literal
@@ -72,7 +73,30 @@ class SelfRegisterRequest(BaseModel):
         v2 = v.strip()
         if not v2:
             raise ValueError("Campo obligatorio")
+        lowered = v2.lower()
+        blocked = (
+            "nigga",
+            "nigger",
+            "faggot",
+            "retard",
+            "bitch",
+            "cunt",
+            "whore",
+            "slut",
+        )
+        if any(w in lowered for w in blocked):
+            raise ValueError("Nombre/apellidos no válidos")
+        # Spanish-friendly names: letters (incl. accents), spaces, apostrophes, dots, hyphens
+        if not re.fullmatch(r"[A-Za-zÀ-ÿ\u00f1\u00d1\s'.-]+", v2):
+            raise ValueError("Nombre/apellidos no válidos")
         return v2
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def validate_dob(cls, v: date) -> date:
+        if v > date.today():
+            raise ValueError("La fecha de nacimiento no puede ser futura")
+        return v
 
 
 def _normalize_email(email: str) -> str:

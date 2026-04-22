@@ -18,6 +18,7 @@ def init_auth_schema() -> None:
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL,
       patient_id TEXT,
+      medico_id TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     """
@@ -55,7 +56,43 @@ def init_auth_schema() -> None:
             )
         )
 
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS medicos (
+                  medico_id TEXT PRIMARY KEY,
+                  full_name TEXT NOT NULL,
+                  phone TEXT,
+                  date_of_birth DATE,
+                  sex TEXT,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+
+        conn.execute(
+            text("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS medico_id TEXT;"),
+        )
+        conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                  IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'app_users_medico_id_fkey'
+                  ) THEN
+                    ALTER TABLE app_users
+                      ADD CONSTRAINT app_users_medico_id_fkey
+                      FOREIGN KEY (medico_id) REFERENCES medicos(medico_id);
+                  END IF;
+                END $$;
+                """
+            )
+        )
+
         conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS patients_phone_uidx ON patients(phone) WHERE phone IS NOT NULL;"))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS medicos_phone_uidx ON medicos(phone) WHERE phone IS NOT NULL;"))
 
         conn.execute(text("CREATE SEQUENCE IF NOT EXISTS patient_id_seq;"))
         conn.execute(text("CREATE SEQUENCE IF NOT EXISTS medico_id_seq;"))

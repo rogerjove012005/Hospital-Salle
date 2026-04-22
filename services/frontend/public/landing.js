@@ -10,7 +10,8 @@ const qs = (s) => document.querySelector(s);
 const subtitle = qs("#subtitle");
 const emailEl = qs("#email");
 const roleEl = qs("#role");
-const patientEl = qs("#patient");
+const idLabel = qs("#idLabel");
+const idValue = qs("#idValue");
 const statusEl = qs("#status");
 
 const btnContinue = qs("#btnContinue");
@@ -106,7 +107,16 @@ async function boot() {
     subtitle.textContent = "Tu sesión está activa.";
     emailEl.textContent = me.email || "—";
     roleEl.textContent = me.role || "—";
-    patientEl.textContent = me.patient_id || "—";
+    if (me.role === "paciente") {
+      idLabel.textContent = "ID paciente";
+      idValue.textContent = me.patient_id || "—";
+    } else if (me.role === "medico") {
+      idLabel.textContent = "ID médico";
+      idValue.textContent = me.medico_id || "—";
+    } else {
+      idLabel.textContent = "Cuenta";
+      idValue.textContent = "—";
+    }
     setStatus("");
   } catch (e) {
     setStatus(String(e.message || e), "error");

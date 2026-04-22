@@ -142,6 +142,24 @@ def get_my_patient(user: UserOut = Depends(require_roles("paciente"))):
     return dict(row) if row else None
 
 
+@app.get("/medicos/me")
+def get_my_medico(user: UserOut = Depends(require_roles("medico"))):
+    if not user.medico_id:
+        return None
+    with engine().connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT medico_id, full_name, phone, date_of_birth, sex, created_at
+                FROM medicos
+                WHERE medico_id = :mid
+                """
+            ),
+            {"mid": user.medico_id},
+        ).mappings().fetchone()
+    return dict(row) if row else None
+
+
 @app.get("/studies")
 def list_studies(_user: UserOut = Depends(require_roles("admin", "medico"))):
     with engine().connect() as conn:

@@ -7,7 +7,7 @@ from typing import Annotated, Any, Literal
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
@@ -38,6 +38,7 @@ class UserOut(BaseModel):
     email: str
     role: Role
     patient_id: str | None = None
+    medico_id: str | None = None
 
 
 class CreateUserRequest(BaseModel):
@@ -45,6 +46,11 @@ class CreateUserRequest(BaseModel):
     password: str = Field(min_length=_PASSWORD_MIN_LEN, max_length=_PASSWORD_MAX_LEN)
     role: Role
     patient_id: str | None = None
+    medico_id: str | None = None
+    medico_full_name: str | None = None
+    medico_phone: str | None = None
+    medico_sex: Literal["M", "F", "O"] | None = None
+    medico_date_of_birth: date | None = None
 
     @field_validator("password")
     @classmethod
@@ -72,6 +78,53 @@ class CreateUserRequest(BaseModel):
         if not re.fullmatch(r"^[A-Za-z0-9][A-Za-z0-9_-]*$", v2):
             raise ValueError("patient_id inválido")
         return v2
+
+    @field_validator("medico_id")
+    @classmethod
+    def validate_medico_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v2 = v.strip()
+        if len(v2) < 3 or len(v2) > 64:
+            raise ValueError("medico_id inválido")
+        if not re.fullmatch(r"^[A-Za-z0-9][A-Za-z0-9_-]*$", v2):
+            raise ValueError("medico_id inválido")
+        return v2
+
+    @field_validator("medico_full_name")
+    @classmethod
+    def strip_medico_name(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v2 = v.strip()
+        return v2 or None
+
+    @field_validator("medico_phone")
+    @classmethod
+    def normalize_admin_medico_phone(cls, v: str | None) -> str | None:
+        if v is None or not str(v).strip():
+            return None
+        p = _normalize_phone(str(v))
+        if len(p) < 6 or len(p) > 32:
+            raise ValueError("medico_phone inválido")
+        return p
+
+    @model_validator(mode="after")
+    def coherent_role_fk(self) -> "CreateUserRequest":
+        if self.role == "admin":
+            if self.patient_id is not None or self.medico_id is not None or self.medico_full_name:
+                raise ValueError("Cuenta admin: no asociar patient_id ni ficha de médico")
+        elif self.role == "paciente":
+            if not self.patient_id:
+                raise ValueError("Rol paciente: patient_id es obligatorio (paciente existente en BD)")
+            if self.medico_id is not None or self.medico_full_name:
+                raise ValueError("Rol paciente: no use campos de médico")
+        elif self.role == "medico":
+            if self.patient_id is not None:
+                raise ValueError("Rol médico: no use patient_id")
+            if not self.medico_id and not self.medico_full_name:
+                raise ValueError("Rol médico: indique medico_id de una ficha existente o medico_full_name para crear ficha")
+        return self
 
 
 class SelfRegisterRequest(BaseModel):
@@ -148,6 +201,8 @@ def _register_integrity_error(exc: IntegrityError) -> HTTPException:
         return HTTPException(status_code=400, detail="Email ya registrado")
     if "patients_phone" in raw or ("patients" in raw and "phone" in raw and "unique" in raw):
         return HTTPException(status_code=400, detail="Teléfono ya registrado")
+    if "medicos_phone" in raw or ("medicos" in raw and "phone" in raw and "unique" in raw):
+        return HTTPException(status_code=400, detail="Teléfono ya registrado (médicos)")
     if "patients_pkey" in raw or ("patient_id" in raw and "unique" in raw):
         return HTTPException(status_code=409, detail="Conflicto de identificador. Vuelve a intentarlo.")
     log.warning("register_self: unmapped integrity error: %s", exc)
@@ -190,8 +245,8 @@ def ensure_admin_seed() -> None:
         conn.execute(
             text(
                 """
-                INSERT INTO app_users(user_id, email, password_hash, role)
-                VALUES (:user_id, :email, :password_hash, 'admin')
+                INSERT INTO app_users(user_id, email, password_hash, role, patient_id, medico_id)
+                VALUES (:user_id, :email, :password_hash, 'admin', NULL, NULL)
                 """
             ),
             {
@@ -202,13 +257,13 @@ def ensure_admin_seed() -> None:
         )
 
 
-def authenticate(email: str, password: str) -> tuple[str, Role, str | None]:
+def authenticate(email: str, password: str) -> tuple[str, Role, str | None, str | None]:
     email_norm = _normalize_email(email)
     with engine().connect() as conn:
         row = conn.execute(
             text(
                 """
-                SELECT user_id, email, password_hash, role, patient_id
+                SELECT user_id, email, password_hash, role, patient_id, medico_id
                 FROM app_users
                 WHERE email = :email
                 """
@@ -223,11 +278,11 @@ def authenticate(email: str, password: str) -> tuple[str, Role, str | None]:
     if not verify_password(password, password_hash_db):
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
-    return str(row.user_id), row.role, row.patient_id
+    return str(row.user_id), row.role, row.patient_id, row.medico_id
 
 
 def login(req: LoginRequest) -> TokenResponse:
-    user_id, role, _patient_id = authenticate(req.email, req.password)
+    user_id, role, _patient_id, _medico_id = authenticate(req.email, req.password)
     return TokenResponse(access_token=create_access_token(sub=user_id, role=role))
 
 
@@ -236,7 +291,7 @@ def _load_user(user_id: str) -> UserOut:
         row = conn.execute(
             text(
                 """
-                SELECT user_id, email, role, patient_id
+                SELECT user_id, email, role, patient_id, medico_id
                 FROM app_users
                 WHERE user_id = :user_id
                 """
@@ -252,6 +307,7 @@ def _load_user(user_id: str) -> UserOut:
         email=row.email,
         role=row.role,
         patient_id=row.patient_id,
+        medico_id=row.medico_id,
     )
 
 
@@ -272,7 +328,10 @@ def get_current_user(
 def require_roles(*allowed: Role):
     def _dep(user: Annotated[UserOut, Depends(get_current_user)]) -> UserOut:
         if user.role not in allowed:
-            raise HTTPException(status_code=403, detail="Forbidden")
+            raise HTTPException(
+                status_code=403,
+                detail="Permiso denegado: tu rol no puede acceder a este recurso",
+            )
         return user
 
     return _dep
@@ -281,39 +340,128 @@ def require_roles(*allowed: Role):
 def create_user(req: CreateUserRequest) -> UserOut:
     user_id = str(uuid.uuid4())
     email_norm = _normalize_email(req.email)
-    password_hash = hash_password(req.password)
+
     with engine().begin() as conn:
         try:
-            conn.execute(
-                text(
-                    """
-                    INSERT INTO app_users(user_id, email, password_hash, role, patient_id)
-                    VALUES (:user_id, :email, :password_hash, :role, :patient_id)
-                    """
-                ),
-                {
-                    "user_id": user_id,
-                    "email": email_norm,
-                    "password_hash": password_hash,
-                    "role": req.role,
-                    "patient_id": req.patient_id,
-                },
+            if req.role == "medico" and not req.medico_id:
+                medico_id = _next_medico_id(conn)
+                full_name = (req.medico_full_name or email_norm.split("@", 1)[0]).strip()
+                if not full_name:
+                    raise HTTPException(status_code=400, detail="medico_full_name inválido")
+                conn.execute(
+                    text(
+                        """
+                        INSERT INTO medicos(medico_id, full_name, phone, date_of_birth, sex)
+                        VALUES (:medico_id, :full_name, :phone, :dob, :sex)
+                        """
+                    ),
+                    {
+                        "medico_id": medico_id,
+                        "full_name": full_name,
+                        "phone": req.medico_phone,
+                        "dob": req.medico_date_of_birth,
+                        "sex": req.medico_sex,
+                    },
+                )
+                _insert_app_user(
+                    conn,
+                    user_id=user_id,
+                    email_norm=email_norm,
+                    password=req.password,
+                    role="medico",
+                    patient_id=None,
+                    medico_id=medico_id,
+                )
+                return UserOut(
+                    user_id=user_id,
+                    email=email_norm,
+                    role="medico",
+                    patient_id=None,
+                    medico_id=medico_id,
+                )
+
+            if req.role == "medico" and req.medico_id:
+                row = conn.execute(
+                    text("SELECT medico_id FROM medicos WHERE medico_id = :m"),
+                    {"m": req.medico_id},
+                ).fetchone()
+                if not row:
+                    raise HTTPException(status_code=400, detail="medico_id no existe en la base de datos")
+                _insert_app_user(
+                    conn,
+                    user_id=user_id,
+                    email_norm=email_norm,
+                    password=req.password,
+                    role="medico",
+                    patient_id=None,
+                    medico_id=req.medico_id,
+                )
+                return UserOut(
+                    user_id=user_id,
+                    email=email_norm,
+                    role="medico",
+                    patient_id=None,
+                    medico_id=req.medico_id,
+                )
+
+            if req.role == "paciente":
+                _insert_app_user(
+                    conn,
+                    user_id=user_id,
+                    email_norm=email_norm,
+                    password=req.password,
+                    role="paciente",
+                    patient_id=req.patient_id,
+                    medico_id=None,
+                )
+                return UserOut(
+                    user_id=user_id,
+                    email=email_norm,
+                    role="paciente",
+                    patient_id=req.patient_id,
+                    medico_id=None,
+                )
+
+            _insert_app_user(
+                conn,
+                user_id=user_id,
+                email_norm=email_norm,
+                password=req.password,
+                role="admin",
+                patient_id=None,
+                medico_id=None,
             )
+            return UserOut(
+                user_id=user_id,
+                email=email_norm,
+                role="admin",
+                patient_id=None,
+                medico_id=None,
+            )
+        except HTTPException:
+            raise
         except IntegrityError as e:
             raise _register_integrity_error(e) from e
         except Exception as e:
             raise HTTPException(status_code=400, detail="User creation failed") from e
 
-    return UserOut(user_id=user_id, email=email_norm, role=req.role, patient_id=req.patient_id)
 
-
-def _insert_app_user(conn, *, user_id: str, email_norm: str, password: str, role: Role, patient_id: str | None) -> None:
+def _insert_app_user(
+    conn,
+    *,
+    user_id: str,
+    email_norm: str,
+    password: str,
+    role: Role,
+    patient_id: str | None,
+    medico_id: str | None = None,
+) -> None:
     try:
         conn.execute(
             text(
                 """
-                INSERT INTO app_users(user_id, email, password_hash, role, patient_id)
-                VALUES (:user_id, :email, :password_hash, :role, :patient_id)
+                INSERT INTO app_users(user_id, email, password_hash, role, patient_id, medico_id)
+                VALUES (:user_id, :email, :password_hash, :role, :patient_id, :medico_id)
                 """
             ),
             {
@@ -322,6 +470,7 @@ def _insert_app_user(conn, *, user_id: str, email_norm: str, password: str, role
                 "password_hash": hash_password(password),
                 "role": role,
                 "patient_id": patient_id,
+                "medico_id": medico_id,
             },
         )
     except IntegrityError as e:
@@ -342,7 +491,7 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
             if existing:
                 raise HTTPException(status_code=400, detail="Email already registered")
 
-            phone_row = conn.execute(
+            pat_phone = conn.execute(
                 text(
                     """
                     SELECT patient_id FROM patients
@@ -356,7 +505,21 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
                 ),
                 {"phone": phone_norm},
             ).fetchone()
-            if phone_row:
+            med_phone = conn.execute(
+                text(
+                    """
+                    SELECT medico_id FROM medicos
+                    WHERE regexp_replace(
+                        regexp_replace(trim(coalesce(phone, '')), '[[:space:]]+', '', 'g'),
+                        '-',
+                        '',
+                        'g'
+                    ) = :phone
+                    """
+                ),
+                {"phone": phone_norm},
+            ).fetchone()
+            if pat_phone or med_phone:
                 raise HTTPException(status_code=400, detail="Teléfono ya registrado")
 
             if req.role == "paciente":
@@ -386,25 +549,30 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
                     password=req.password,
                     role="paciente",
                     patient_id=patient_id,
+                    medico_id=None,
                 )
-                return UserOut(user_id=user_id, email=email_norm, role="paciente", patient_id=patient_id)
+                return UserOut(
+                    user_id=user_id,
+                    email=email_norm,
+                    role="paciente",
+                    patient_id=patient_id,
+                    medico_id=None,
+                )
 
-            # medico
-            medico_ref = _next_medico_id(conn)
+            medico_id = _next_medico_id(conn)
             conn.execute(
                 text(
                     """
-                    INSERT INTO patients(patient_id, age, sex, full_name, phone, date_of_birth)
-                    VALUES (:patient_id, :age, :sex, :full_name, :phone, :dob)
+                    INSERT INTO medicos(medico_id, full_name, phone, date_of_birth, sex)
+                    VALUES (:medico_id, :full_name, :phone, :dob, :sex)
                     """
                 ),
                 {
-                    "patient_id": medico_ref,
-                    "age": age,
-                    "sex": req.sex,
+                    "medico_id": medico_id,
                     "full_name": full_name,
                     "phone": phone_norm,
                     "dob": req.date_of_birth,
+                    "sex": req.sex,
                 },
             )
 
@@ -416,8 +584,15 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
                 password=req.password,
                 role="medico",
                 patient_id=None,
+                medico_id=medico_id,
             )
-            return UserOut(user_id=user_id, email=email_norm, role="medico", patient_id=None)
+            return UserOut(
+                user_id=user_id,
+                email=email_norm,
+                role="medico",
+                patient_id=None,
+                medico_id=medico_id,
+            )
     except IntegrityError as e:
         raise _register_integrity_error(e) from e
 
@@ -425,7 +600,9 @@ def register_self(req: SelfRegisterRequest) -> UserOut:
 def list_users() -> list[dict[str, Any]]:
     with engine().connect() as conn:
         rows = conn.execute(
-            text("SELECT user_id, email, role, patient_id, created_at FROM app_users ORDER BY created_at DESC")
+            text(
+                "SELECT user_id, email, role, patient_id, medico_id, created_at FROM app_users ORDER BY created_at DESC"
+            )
         ).mappings().all()
     return [dict(r) for r in rows]
 

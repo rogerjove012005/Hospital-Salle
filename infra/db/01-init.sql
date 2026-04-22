@@ -8,10 +8,21 @@ CREATE TABLE IF NOT EXISTS patients (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Personal médico (independiente de `patients`; los estudios siguen vinculados solo a pacientes)
+CREATE TABLE IF NOT EXISTS medicos (
+  medico_id TEXT PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  phone TEXT,
+  date_of_birth DATE,
+  sex TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE SEQUENCE IF NOT EXISTS patient_id_seq;
 CREATE SEQUENCE IF NOT EXISTS medico_id_seq;
 
 CREATE UNIQUE INDEX IF NOT EXISTS patients_phone_uidx ON patients(phone) WHERE phone IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS medicos_phone_uidx ON medicos(phone) WHERE phone IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS studies (
   study_id TEXT PRIMARY KEY,

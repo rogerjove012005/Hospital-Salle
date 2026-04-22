@@ -110,7 +110,8 @@ function setTab(which) {
     qs(".header .muted").textContent = "Accede a tu cuenta para continuar.";
   } else {
     qs("h1").textContent = "Crear cuenta";
-    qs(".header .muted").textContent = "Registra tu cuenta de paciente.";
+    qs(".header .muted").textContent =
+      "Elige Paciente o Médico: se guardará en la base de datos y se te asignará un ID (P… o M…).";
   }
 }
 

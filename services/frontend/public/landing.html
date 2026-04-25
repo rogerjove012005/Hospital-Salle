@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f766e" />
-    <title>Mi sesión — laSalle Health Center</title>
+    <title>Mi panel — laSalle Health Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/styles.css" />
     <script src="/config.js"></script>
   </head>
-  <body>
+  <body class="dash-body">
     <header class="site-header">
       <div class="site-header__inner">
         <a href="/index.html" class="site-logo" aria-label="laSalle Health Center — inicio">
@@ -26,76 +26,180 @@
           </span>
           <span class="site-logo__text">
             <span class="site-logo__title">laSalle Health Center</span>
-            <span class="site-logo__subtitle">Portal de información clínica</span>
+            <span class="site-logo__subtitle">Mi panel</span>
           </span>
         </a>
         <nav class="site-nav" aria-label="Enlaces de cabecera">
-          <a href="/index.html">Página de acceso</a>
+          <a href="#dashOverview">Resumen</a>
+          <a href="#dashActions">Accesos</a>
+          <a href="#dashActivity">Actividad</a>
         </nav>
       </div>
     </header>
 
-    <div class="trust-bar">
-      <div class="trust-bar__inner">
-        <span class="trust-bar__item">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2.5-9H19V1h-2v1H7V1H5v1H3.5C2.4 2 1 3.4 1 4.5v15C1 20.6 2.4 22 3.5 22h17c1.1 0 2.5-1.4 2.5-2.5v-15C23 2.4 21.6 1 20.5 1z" />
-          </svg>
-          Sesión iniciada
-        </span>
-        <span class="trust-bar__item"> laSalle Health Center — cierre la sesión en equipos compartidos. </span>
-      </div>
-    </div>
-
-    <div class="portal-wrap">
-      <main class="portal-main portal-main--single">
-        <div class="portal-form-column" style="width: 100%">
-          <article class="portal-card auth-card auth-card--landing">
-            <div class="portal-card__head">
-              <span class="portal-card__badge">Área de usuario</span>
-              <header class="header">
-                <p class="kicker">Bienvenida al portal</p>
-                <h1 class="auth-title" id="welcomeTitle">Resumen de su sesión</h1>
-                <p class="muted" id="subtitle">Cargando…</p>
-              </header>
-            </div>
-
-            <div class="portal-card__body" style="padding: 0 20px 22px">
-              <section class="landing" aria-label="Datos de la sesión">
-                <div class="kv" id="sessionKv">
-                  <div class="k">Correo (usuario)</div>
-                  <div class="v" id="email">—</div>
-
-                  <div class="k">Perfil de acceso</div>
-                  <div class="v" id="role">—</div>
-
-                  <div class="k" id="idLabel">ID en el centro</div>
-                  <div class="v" id="idValue">—</div>
-                </div>
-
-                <div class="row" style="margin-top: 16px">
-                  <button id="btnContinue" type="button" class="btn--primary">Continuar</button>
-                  <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
-                </div>
-
-                <div class="credential-strip" style="margin-top: 12px" role="status">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="16" rx="1" />
-                    <path d="M3 8h18" />
-                  </svg>
-                  <span>Los datos mostrados corresponden a su sesión. Para consultar la historia o resultados, use las opciones
-                    de su perfil (según se implemente en el sistema del centro).</span>
-                </div>
-
-                <div class="status" style="margin-top: 10px" aria-live="polite">
-                  <div id="status" class="statusText muted"></div>
-                </div>
-              </section>
-            </div>
-          </article>
+    <main class="dash" id="dash">
+      <section class="dash__greeting" id="dashOverview">
+        <div class="dash__greeting-head">
+          <p class="dash__eyebrow">Mi panel</p>
+          <button id="btnLogout" class="dash__logout" type="button" aria-label="Cerrar sesión">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
+            Cerrar sesión
+          </button>
         </div>
-      </main>
-    </div>
+        <h1 class="dash__title">Hola, <span id="userName">—</span></h1>
+        <p class="dash__sub" id="dashSub">Cargando información de su sesión…</p>
+        <div class="dash__chips">
+          <span class="chip" id="chipRole">—</span>
+          <span class="chip chip--quiet" id="chipId">—</span>
+          <span class="chip chip--quiet">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+            </svg>
+            Sesión cifrada
+          </span>
+        </div>
+      </section>
+
+      <section class="dash__metrics" aria-label="Resumen rápido">
+        <article class="metric">
+          <p class="metric__label">Próxima cita</p>
+          <p class="metric__value" id="mNextAppt">—</p>
+          <p class="metric__hint" id="mNextApptHint">Sin citas programadas.</p>
+        </article>
+        <article class="metric">
+          <p class="metric__label" id="mSecondaryLabel">Última visita</p>
+          <p class="metric__value" id="mSecondaryValue">—</p>
+          <p class="metric__hint" id="mSecondaryHint">Aún sin registros.</p>
+        </article>
+        <article class="metric">
+          <p class="metric__label">Notificaciones</p>
+          <p class="metric__value" id="mNotif">0</p>
+          <p class="metric__hint">Todo al día.</p>
+        </article>
+        <article class="metric">
+          <p class="metric__label">Privacidad</p>
+          <p class="metric__value">RGPD</p>
+          <p class="metric__hint">Cumplimiento activo</p>
+        </article>
+      </section>
+
+      <section class="dash__grid">
+        <article class="dash-card" id="dashActions">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Accesos rápidos</h2>
+            <p class="dash-card__sub" id="actionsSub">Las acciones disponibles dependen de su perfil.</p>
+          </header>
+          <ul class="actions" id="actionsList" aria-label="Acciones rápidas">
+            <li>
+              <a class="action" href="#" data-action="profile">
+                <span class="action__icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>
+                  </svg>
+                </span>
+                <span class="action__body">
+                  <span class="action__title">Mi perfil</span>
+                  <span class="action__desc">Datos personales y de contacto.</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a class="action" href="#" data-action="appointments">
+                <span class="action__icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="3" y="5" width="18" height="16" rx="2"/>
+                    <path d="M3 9h18M8 3v4M16 3v4"/>
+                  </svg>
+                </span>
+                <span class="action__body">
+                  <span class="action__title" id="actionAppointmentsTitle">Mis citas</span>
+                  <span class="action__desc">Calendario clínico y próximas visitas.</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a class="action" href="#" data-action="records">
+                <span class="action__icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                    <path d="M14 3v6h6M8 13h8M8 17h6"/>
+                  </svg>
+                </span>
+                <span class="action__body">
+                  <span class="action__title" id="actionRecordsTitle">Mi expediente</span>
+                  <span class="action__desc">Informes, resultados y antecedentes.</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a class="action" href="#" data-action="contact">
+                <span class="action__icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M21 11.5a8.4 8.4 0 0 1-1 4 8.5 8.5 0 0 1-7.5 4.5 8.4 8.4 0 0 1-4-1L3 21l2-5.5a8.4 8.4 0 0 1-1-4 8.5 8.5 0 0 1 4.5-7.5 8.4 8.4 0 0 1 4-1 8.5 8.5 0 0 1 8.5 8.5z"/>
+                  </svg>
+                </span>
+                <span class="action__body">
+                  <span class="action__title">Contacto</span>
+                  <span class="action__desc">Información del centro y atención.</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </article>
+
+        <article class="dash-card" id="dashActivity">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Actividad reciente</h2>
+            <p class="dash-card__sub">Eventos y avisos relacionados con su cuenta.</p>
+          </header>
+          <ul class="timeline" id="activityList" aria-label="Línea temporal">
+            <li class="timeline__item">
+              <span class="timeline__dot" aria-hidden="true"></span>
+              <div class="timeline__body">
+                <p class="timeline__title">Inicio de sesión</p>
+                <p class="timeline__meta" id="loginMeta">Acceso correcto desde este navegador.</p>
+              </div>
+            </li>
+            <li class="timeline__item timeline__item--quiet">
+              <span class="timeline__dot" aria-hidden="true"></span>
+              <div class="timeline__body">
+                <p class="timeline__title">Cuenta verificada</p>
+                <p class="timeline__meta">Su cuenta cumple los criterios de acceso del centro.</p>
+              </div>
+            </li>
+            <li class="timeline__item timeline__item--quiet">
+              <span class="timeline__dot" aria-hidden="true"></span>
+              <div class="timeline__body">
+                <p class="timeline__title">Política de privacidad</p>
+                <p class="timeline__meta">Tratamiento de datos conforme al RGPD.</p>
+              </div>
+            </li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="dash__notice" role="status">
+        <div class="dash__notice-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v5M12 17h.01"/>
+          </svg>
+        </div>
+        <div>
+          <p class="dash__notice-title">Recuerde cerrar la sesión</p>
+          <p class="dash__notice-text">Especialmente en equipos compartidos. Su sesión expira automáticamente tras un periodo de inactividad.</p>
+        </div>
+      </section>
+
+      <div class="status" aria-live="polite" style="margin-top: 8px">
+        <div id="status" class="statusText"></div>
+      </div>
+    </main>
 
     <footer class="site-footer">
       <div class="site-footer__inner">

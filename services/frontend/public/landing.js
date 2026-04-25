@@ -6,25 +6,36 @@ function apiBase() {
 const API_BASE = apiBase();
 
 const qs = (s) => document.querySelector(s);
+const qsa = (s) => document.querySelectorAll(s);
 
-const subtitle = qs("#subtitle");
-const welcomeTitle = qs("#welcomeTitle");
-const emailEl = qs("#email");
-const roleEl = qs("#role");
-const idLabel = qs("#idLabel");
-const idValue = qs("#idValue");
+const userNameEl = qs("#userName");
+const dashSubEl = qs("#dashSub");
+const chipRoleEl = qs("#chipRole");
+const chipIdEl = qs("#chipId");
 const statusEl = qs("#status");
+
+const mNextAppt = qs("#mNextAppt");
+const mNextApptHint = qs("#mNextApptHint");
+const mSecondaryLabel = qs("#mSecondaryLabel");
+const mSecondaryValue = qs("#mSecondaryValue");
+const mSecondaryHint = qs("#mSecondaryHint");
+const mNotif = qs("#mNotif");
+
+const actionsSub = qs("#actionsSub");
+const actionAppointmentsTitle = qs("#actionAppointmentsTitle");
+const actionRecordsTitle = qs("#actionRecordsTitle");
+const actionsList = qs("#actionsList");
+
+const loginMeta = qs("#loginMeta");
 
 const ROLE_LABELS = {
   paciente: "Paciente",
   medico: "Médico / personal clínico",
-  admin: "Administración del sistema",
+  admin: "Administración",
 };
 
-const btnContinue = qs("#btnContinue");
-const btnLogout = qs("#btnLogout");
-
 function setStatus(message, kind = "neutral") {
+  if (!statusEl) return;
   statusEl.textContent = message || "";
   statusEl.classList.remove("ok", "error");
   if (kind === "ok") statusEl.classList.add("ok");
@@ -93,14 +104,82 @@ function redirectToLogin() {
   window.location.href = "/index.html";
 }
 
-btnContinue.addEventListener("click", () => {
-  window.location.href = "/index.html?noredirect=1";
-});
+const btnLogout = qs("#btnLogout");
+if (btnLogout) {
+  btnLogout.addEventListener("click", () => {
+    setToken(null);
+    redirectToLogin();
+  });
+}
 
-btnLogout.addEventListener("click", () => {
-  setToken(null);
-  redirectToLogin();
-});
+if (actionsList) {
+  actionsList.addEventListener("click", (e) => {
+    const a = e.target.closest("[data-action]");
+    if (!a) return;
+    e.preventDefault();
+    const action = a.getAttribute("data-action");
+    setStatus(`"${a.querySelector(".action__title")?.textContent || action}" estará disponible próximamente.`, "ok");
+  });
+}
+
+function deriveDisplayName(me) {
+  const email = (me && me.email) || "";
+  const local = email.includes("@") ? email.split("@")[0] : email;
+  if (!local) return "—";
+  return local.charAt(0).toUpperCase() + local.slice(1);
+}
+
+function applyRoleSpecifics(me) {
+  const role = me.role;
+
+  if (role === "paciente") {
+    chipRoleEl.textContent = ROLE_LABELS.paciente;
+    chipRoleEl.classList.add("chip--brand");
+    chipIdEl.textContent = me.patient_id ? `ID paciente · ${me.patient_id}` : "Sin ID asignado";
+    actionsSub.textContent = "Acciones disponibles para pacientes.";
+    actionAppointmentsTitle.textContent = "Mis citas";
+    actionRecordsTitle.textContent = "Mi expediente";
+    mSecondaryLabel.textContent = "Última visita";
+    mSecondaryValue.textContent = "—";
+    mSecondaryHint.textContent = "Aún sin registros clínicos.";
+    return;
+  }
+
+  if (role === "medico") {
+    chipRoleEl.textContent = ROLE_LABELS.medico;
+    chipRoleEl.classList.add("chip--brand");
+    chipIdEl.textContent = me.medico_id ? `ID médico · ${me.medico_id}` : "Sin ID asignado";
+    actionsSub.textContent = "Acciones disponibles para personal clínico.";
+    actionAppointmentsTitle.textContent = "Agenda del día";
+    actionRecordsTitle.textContent = "Pacientes asignados";
+    mSecondaryLabel.textContent = "Pacientes asignados";
+    mSecondaryValue.textContent = "—";
+    mSecondaryHint.textContent = "Sin información agregada todavía.";
+    return;
+  }
+
+  chipRoleEl.textContent = ROLE_LABELS.admin;
+  chipRoleEl.classList.add("chip--brand");
+  chipIdEl.textContent = "Cuenta administradora";
+  actionsSub.textContent = "Acciones disponibles para administración.";
+  actionAppointmentsTitle.textContent = "Calendario operativo";
+  actionRecordsTitle.textContent = "Gestión de usuarios";
+  mSecondaryLabel.textContent = "Usuarios activos";
+  mSecondaryValue.textContent = "—";
+  mSecondaryHint.textContent = "Disponible al conectar el endpoint.";
+}
+
+function setLoginMeta() {
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat("es-ES", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  loginMeta.textContent = `Acceso correcto · ${fmt.format(now)}`;
+}
 
 async function boot() {
   const token = getToken();
@@ -111,26 +190,20 @@ async function boot() {
 
   try {
     const me = await api("/auth/me");
-    if (welcomeTitle) welcomeTitle.textContent = "Sesión activa";
-    subtitle.textContent =
-      "Bienvenido a laSalle Health Center. Puede continuar. Cierre la sesión al terminar, sobre todo en dispositivos compartidos.";
-    emailEl.textContent = me.email || "—";
-    roleEl.textContent = (me.role && ROLE_LABELS[me.role]) || me.role || "—";
-    if (me.role === "paciente") {
-      idLabel.textContent = "ID paciente";
-      idValue.textContent = me.patient_id || "—";
-    } else if (me.role === "medico") {
-      idLabel.textContent = "ID médico";
-      idValue.textContent = me.medico_id || "—";
-    } else {
-      idLabel.textContent = "Cuenta";
-      idValue.textContent = "—";
-    }
+    userNameEl.textContent = deriveDisplayName(me);
+    dashSubEl.textContent = me.email
+      ? `Sesión activa para ${me.email}. Cierre sesión al terminar, sobre todo en equipos compartidos.`
+      : "Sesión activa. Cierre sesión al terminar.";
+    applyRoleSpecifics(me);
+    setLoginMeta();
+    mNextAppt.textContent = "—";
+    mNextApptHint.textContent = "Sin citas programadas en este momento.";
+    mNotif.textContent = "0";
     setStatus("");
   } catch (e) {
-    if (welcomeTitle) welcomeTitle.textContent = "Sesión no disponible";
+    userNameEl.textContent = "—";
+    dashSubEl.textContent = "No se pudo validar la sesión. Vuelve a identificarte en el acceso al portal.";
     setStatus(String(e.message || e), "error");
-    subtitle.textContent = "No se pudo validar la sesión. Vuelve a identificarte en el acceso al portal.";
     setToken(null);
   }
 }

@@ -653,22 +653,42 @@ def _smtp_enabled() -> bool:
     return bool(os.getenv("SMTP_HOST"))
 
 
+_SMTP_PLACEHOLDER_FRAGMENTS = ("tu_email", "tu_correo", "your@", "your_email", "ejemplo@")
+
+
+def _looks_like_placeholder(value: str) -> bool:
+    v = (value or "").strip().lower()
+    if not v:
+        return False
+    return any(frag in v for frag in _SMTP_PLACEHOLDER_FRAGMENTS)
+
+
 def _send_reset_email(*, to_email: str, reset_url: str) -> None:
     """
     Send password reset email via SMTP.
     If SMTP is not configured, raises RuntimeError.
     """
-    host = os.getenv("SMTP_HOST")
+    host = (os.getenv("SMTP_HOST") or "").strip()
     if not host:
         raise RuntimeError("SMTP_HOST is not configured")
 
     port = int(os.getenv("SMTP_PORT", "587"))
-    user = os.getenv("SMTP_USER", "")
-    password = os.getenv("SMTP_PASSWORD", "")
-    from_email = os.getenv("SMTP_FROM", user or "no-reply@lasalle-health.local")
+    user = (os.getenv("SMTP_USER") or "").strip()
+    # Gmail App Passwords are 16 chars; the UI shows them with spaces (e.g. "abcd efgh ijkl mnop").
+    # smtplib needs them without spaces. Strip every whitespace defensively.
+    password_raw = os.getenv("SMTP_PASSWORD") or ""
+    password = "".join(password_raw.split())
+    from_email = (os.getenv("SMTP_FROM") or user or "no-reply@lasalle-health.local").strip()
     from_name = os.getenv("SMTP_FROM_NAME", "laSalle Health Center")
     use_ssl = os.getenv("SMTP_USE_SSL", "0").strip().lower() in ("1", "true", "yes")
     use_starttls = os.getenv("SMTP_USE_STARTTLS", "1").strip().lower() in ("1", "true", "yes")
+
+    # Fail fast with a clear message if the .env still has the example values.
+    if _looks_like_placeholder(user) or _looks_like_placeholder(from_email):
+        raise RuntimeError(
+            f"SMTP_USER/SMTP_FROM look like placeholders (user={user!r}, from={from_email!r}). "
+            "Edita infra/docker/.env con tu correo real y reinicia el contenedor api."
+        )
 
     msg = EmailMessage()
     msg["Subject"] = "Restablecer contraseña — laSalle Health Center"

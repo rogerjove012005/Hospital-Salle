@@ -24,6 +24,14 @@ server {
     try_files $uri =404;
   }
 
+  # Force fresh HTML/JS/CSS so UI changes are visible without manual hard-refresh
+  location ~* \.(?:html|js|css)$ {
+    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+    add_header Pragma "no-cache" always;
+    expires off;
+    try_files $uri $uri/ /index.html;
+  }
+
   location / {
     try_files $uri $uri/ /index.html;
   }

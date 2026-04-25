@@ -175,6 +175,22 @@ if (linkForgot) {
   });
 }
 
+// Defensive: some desktop browsers/extensions can interfere with direct listeners on anchors.
+// Delegation ensures the modal still opens reliably.
+document.addEventListener(
+  "click",
+  (e) => {
+    const t = e.target;
+    if (!t) return;
+    const el = t.closest ? t.closest("#linkForgot") : null;
+    if (!el) return;
+    e.preventDefault();
+    const loginEmail = qs("#login-email");
+    openForgotModal(loginEmail && typeof loginEmail.value === "string" ? loginEmail.value : "");
+  },
+  true
+);
+
 if (forgotModal) {
   forgotModal.addEventListener("click", (e) => {
     const t = e.target;

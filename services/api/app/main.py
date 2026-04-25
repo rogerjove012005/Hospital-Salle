@@ -7,7 +7,11 @@ from sqlalchemy import text
 
 from .auth import (
     CreateUserRequest,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     LoginRequest,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
     SelfRegisterRequest,
     TokenResponse,
     UserOut,
@@ -17,6 +21,8 @@ from .auth import (
     register_self,
     list_users,
     login,
+    request_password_reset,
+    reset_password,
     require_roles,
 )
 from .db import engine, init_auth_schema
@@ -97,6 +103,16 @@ def auth_register(req: SelfRegisterRequest):
 @app.get("/auth/me", response_model=UserOut)
 def auth_me(user: UserOut = Depends(get_current_user)):
     return user
+
+
+@app.post("/auth/forgot-password", response_model=ForgotPasswordResponse)
+def auth_forgot_password(req: ForgotPasswordRequest):
+    return request_password_reset(req)
+
+
+@app.post("/auth/reset-password", response_model=ResetPasswordResponse)
+def auth_reset_password(req: ResetPasswordRequest):
+    return reset_password(req)
 
 
 @app.post("/admin/users", response_model=UserOut)

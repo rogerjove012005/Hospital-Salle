@@ -3,96 +3,284 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hospital Salle — Login</title>
+    <meta name="theme-color" content="#0f766e" />
+    <title>Acceso al portal — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/config.js"></script>
   </head>
   <body>
-    <main class="card">
-      <header class="header">
+    <a class="skip-link" href="#authCard">Saltar al formulario de acceso</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a href="/" class="site-logo" aria-label="Inicio laSalle Health Center">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+              <rect x="4" y="4" width="24" height="24" rx="5" stroke="currentColor" stroke-width="1.2" fill="none" />
+              <path
+                d="M16 9v14M9 16h14"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <span class="site-logo__text">
+            <span class="site-logo__title">laSalle Health Center</span>
+            <span class="site-logo__subtitle">Portal de información clínica</span>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="Enlaces de cabecera">
+          <a href="/landing.html">Mi portal</a>
+          <a href="#authCard">Acceso</a>
+          <a href="https://www.w3.org/WAI/standards-guidelines/" rel="noopener noreferrer">Accesibilidad</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="trust-bar" role="region" aria-label="Información de seguridad">
+      <div class="trust-bar__inner">
+        <span class="trust-bar__item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v2h-2V7zm0 4h2v6h-2v-6z"
+            />
+          </svg>
+          Conexión cifrada (HTTPS)
+        </span>
+        <span class="trust-bar__item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"
+            />
+          </svg>
+          Acceso restringido — laSalle Health Center
+        </span>
+      </div>
+    </div>
+
+    <div class="portal-wrap">
+      <main class="portal-main">
+        <aside class="portal-hero" aria-label="Sobre el portal">
+          <div class="portal-hero__content">
+            <p class="portal-hero__kicker">laSalle Health Center</p>
+            <h2 class="portal-hero__title">Un solo acceso para pacientes y personal</h2>
+            <ul class="portal-hero__list">
+              <li>Consulta de su perfil y datos asociados al expediente clínico.</li>
+              <li>Trabajo con el mismo criterio de privacidad que un portal hospitalario real.</li>
+              <li>Protección de datos de salud (RGPD y buenas prácticas clínicas).</li>
+            </ul>
+            <p class="portal-hero__note">
+              Fondo de entorno asistencial (referencia visual habitual en portales de salud; decorativo).
+            </p>
+          </div>
+        </aside>
+
+        <div class="portal-form-column">
+          <article class="portal-card auth-card" id="authCard">
+            <div class="portal-card__head">
+              <span class="portal-card__badge" id="formBadge">Zona restringida</span>
+              <header class="header">
+                <p class="kicker" id="formKicker">Acceso de usuarios registrados</p>
+                <h1 class="auth-title" id="pageTitle">Iniciar sesión</h1>
+                <p class="muted" id="pageSubtitle">Introduzca su usuario (correo) y su contraseña asignada en laSalle Health Center.</p>
+              </header>
+            </div>
+
+            <div class="tabs" role="tablist" aria-label="Tipo de trámite">
+              <button class="tab active" id="tabLogin" type="button" role="tab" aria-selected="true">Iniciar sesión</button>
+              <button class="tab" id="tabRegister" type="button" role="tab" aria-selected="false">Registro</button>
+            </div>
+
+            <section id="panelLogin" class="auth-panel" role="tabpanel">
+              <form id="loginForm" autocomplete="on">
+                <div class="form-block">
+                  <p class="form-block__title">Credenciales</p>
+                  <div class="field">
+                    <label for="login-email">Correo (usuario)</label>
+                    <input
+                      id="login-email"
+                      name="email"
+                      type="email"
+                      autocomplete="username"
+                      inputmode="email"
+                      placeholder="usuario@dominio.com"
+                      required
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="login-password">Contraseña</label>
+                    <input
+                      id="login-password"
+                      name="password"
+                      type="password"
+                      autocomplete="current-password"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                </div>
+                <button type="submit">Entrar al portal</button>
+                <p class="subtle-links" aria-hidden="true">
+                  <a href="#" id="linkForgot">No puedo acceder</a> <span aria-hidden="true">|</span>
+                  <a href="#" onclick="return false">Ayuda</a>
+                </p>
+              </form>
+            </section>
+
+            <section id="panelRegister" class="auth-panel hidden" role="tabpanel">
+              <form id="registerForm" autocomplete="on">
+                <div class="form-block">
+                  <p class="form-block__title">1. Tipo y datos personales</p>
+                  <div class="field">
+                    <label for="reg-role">Perfil</label>
+                    <select id="reg-role" name="role" required>
+                      <option value="paciente" selected>Paciente</option>
+                      <option value="medico">Médico / personal clínico</option>
+                    </select>
+                  </div>
+                  <div class="row">
+                    <div>
+                      <label for="reg-first">Nombre</label>
+                      <input
+                        id="reg-first"
+                        name="first_name"
+                        type="text"
+                        autocomplete="given-name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label for="reg-last">Apellidos</label>
+                      <input
+                        id="reg-last"
+                        name="last_name"
+                        type="text"
+                        autocomplete="family-name"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="reg-phone">Teléfono</label>
+                    <input id="reg-phone" name="phone" type="tel" autocomplete="tel" placeholder="+34 000 000 000" required />
+                  </div>
+                  <div class="row">
+                    <div>
+                      <label for="reg-dob">Fecha de nacimiento</label>
+                      <input id="reg-dob" name="date_of_birth" type="date" required />
+                    </div>
+                    <div>
+                      <label for="reg-sex">Sexo (registro)</label>
+                      <select id="reg-sex" name="sex" required>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                        <option value="O">Otro / N/C</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-block">
+                  <p class="form-block__title">2. Cuenta de acceso</p>
+                  <div class="field">
+                    <label for="reg-email">Correo (usuario)</label>
+                    <input id="reg-email" name="email" type="email" autocomplete="username" required />
+                  </div>
+                  <div class="field">
+                    <label for="reg-password">Contraseña</label>
+                    <input
+                      id="reg-password"
+                      name="password"
+                      type="password"
+                      autocomplete="new-password"
+                      minlength="8"
+                      maxlength="128"
+                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$"
+                      title="Mínimo 8 caracteres, con mayúscula, minúscula, número y un símbolo"
+                      placeholder="Fuerte: letras, número y símbolo"
+                      required
+                    />
+                  </div>
+                </div>
+                <button type="submit">Crear cuenta en laSalle Health Center</button>
+                <div class="credential-strip" aria-live="polite">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span>Se asignan identificadores de expediente: <code>patient_id</code> o <code>medico_id</code> (formato P… / M…).</span>
+                </div>
+              </form>
+            </section>
+
+            <div class="portal-card__foot">
+              <div class="status" aria-live="polite">
+                <div id="status" class="statusText" role="status"></div>
+              </div>
+              <section class="session hidden" id="sessionPanel">
+                <div class="row" style="margin-top: 8px">
+                  <button id="btnMe" class="secondary" type="button">Detalle de sesión</button>
+                  <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
+                </div>
+                <pre id="output" class="output hidden" aria-label="Detalle de perfil">{}</pre>
+              </section>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
         <div>
-          <div class="kicker">laSalle Health Center</div>
-          <h1>Iniciar sesión</h1>
-          <p class="muted">Accede a tu cuenta para continuar.</p>
+          <h3>laSalle Health Center</h3>
+          <p>Contacto (demostración)</p>
+          <p><a href="tel:+34900000000">900 000 000</a></p>
         </div>
-      </header>
-
-      <section class="tabs">
-        <button class="tab active" id="tabLogin" type="button">Iniciar sesión</button>
-        <button class="tab" id="tabRegister" type="button">Crear cuenta</button>
-      </section>
-
-      <section id="panelLogin">
-        <form id="loginForm">
-          <label>Email</label>
-          <input name="email" type="email" autocomplete="username" placeholder="tu@email.com" required />
-          <label>Contraseña</label>
-          <input name="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
-          <button type="submit">Entrar</button>
-        </form>
-      </section>
-
-      <section id="panelRegister" class="hidden">
-        <form id="registerForm">
-          <label>Tipo de cuenta</label>
-          <select name="role" required>
-            <option value="paciente" selected>Paciente</option>
-            <option value="medico">Médico</option>
-          </select>
-
-          <label>Nombre</label>
-          <input name="first_name" type="text" autocomplete="given-name" required />
-
-          <label>Apellidos</label>
-          <input name="last_name" type="text" autocomplete="family-name" required />
-
-          <label>Teléfono</label>
-          <input name="phone" type="tel" autocomplete="tel" placeholder="+34 600 000 000" required />
-
-          <label>Fecha de nacimiento</label>
-          <input name="date_of_birth" type="date" required />
-
-          <label>Sexo</label>
-          <select name="sex" required>
-            <option value="M">Masculino</option>
-            <option value="F">Femenino</option>
-            <option value="O">Otro / Prefiero no decir</option>
-          </select>
-
-          <label>Email</label>
-          <input name="email" type="email" autocomplete="username" placeholder="paciente@email.com" required />
-          <label>Contraseña</label>
-          <input
-            name="password"
-            type="password"
-            autocomplete="new-password"
-            minlength="8"
-            maxlength="128"
-            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$"
-            title="Mínimo 8 caracteres, con mayúscula, minúscula, número y un símbolo"
-            placeholder="••••••••"
-            required
-          />
-          <button type="submit">Crear cuenta</button>
-          <p class="muted small">
-            Según el tipo de cuenta: <strong>paciente</strong> recibe <code>patient_id</code> (P…);
-            <strong>médico</strong> queda en la tabla de personal con <code>medico_id</code> (M…).
+        <div>
+          <h3>Legal</h3>
+          <p>
+            <a href="#" onclick="return false">Aviso legal</a> ·
+            <a href="#" onclick="return false">Protección de datos</a> ·
+            <a href="#" onclick="return false">Privacidad</a>
           </p>
-        </form>
-      </section>
-
-      <section class="status">
-        <div id="status" class="statusText muted" aria-live="polite"></div>
-      </section>
-
-      <section class="session hidden" id="sessionPanel">
-        <div class="row">
-          <button id="btnMe" class="secondary" type="button">Ver mi perfil</button>
-          <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
         </div>
-        <pre id="output" class="output hidden">{}</pre>
-      </section>
-    </main>
+        <div>
+          <h3>Horario de información</h3>
+          <p>L–V 8:00–20:00</p>
+        </div>
+      </div>
+      <div class="site-footer__meta">© laSalle Health Center. Todos los derechos reservados.</div>
+    </footer>
+
+    <div class="modal hidden" id="forgotModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+      <div class="modal__backdrop" data-modal-close="true"></div>
+      <div class="modal__panel" role="document">
+        <div class="modal__head">
+          <h2 class="modal__title" id="forgotTitle">Recuperar contraseña</h2>
+          <button class="modal__close" type="button" aria-label="Cerrar" data-modal-close="true">×</button>
+        </div>
+        <p class="modal__text">Introduce tu correo. Si existe una cuenta, enviaremos un enlace para restablecer la contraseña.</p>
+        <form id="forgotForm" class="modal__form" autocomplete="on">
+          <div class="field">
+            <label for="forgot-email">Correo</label>
+            <input id="forgot-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="usuario@dominio.com" required />
+          </div>
+          <div class="modal__actions">
+            <button class="secondary" type="button" data-modal-close="true">Cancelar</button>
+            <button class="btn--primary" type="submit">Enviar enlace</button>
+          </div>
+        </form>
+        <div class="status" aria-live="polite" style="margin-top: 10px">
+          <div id="forgotStatus" class="statusText"></div>
+        </div>
+      </div>
+    </div>
 
     <script src="/app.js"></script>
   </body>

@@ -25,6 +25,22 @@ def init_auth_schema() -> None:
     with engine().begin() as conn:
         conn.execute(text(sql))
 
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                  token TEXT PRIMARY KEY,
+                  user_id UUID NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  expires_at TIMESTAMPTZ NOT NULL,
+                  used_at TIMESTAMPTZ
+                );
+                CREATE INDEX IF NOT EXISTS password_reset_tokens_user_id_idx ON password_reset_tokens(user_id);
+                CREATE INDEX IF NOT EXISTS password_reset_tokens_expires_at_idx ON password_reset_tokens(expires_at);
+                """
+            )
+        )
+
         # Evolve schema for self-registration (medicos sin patient_id + datos de paciente)
         conn.execute(
             text(

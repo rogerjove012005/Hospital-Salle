@@ -8,11 +8,18 @@ const API_BASE = apiBase();
 const qs = (s) => document.querySelector(s);
 
 const subtitle = qs("#subtitle");
+const welcomeTitle = qs("#welcomeTitle");
 const emailEl = qs("#email");
 const roleEl = qs("#role");
 const idLabel = qs("#idLabel");
 const idValue = qs("#idValue");
 const statusEl = qs("#status");
+
+const ROLE_LABELS = {
+  paciente: "Paciente",
+  medico: "Médico / personal clínico",
+  admin: "Administración del sistema",
+};
 
 const btnContinue = qs("#btnContinue");
 const btnLogout = qs("#btnLogout");
@@ -104,9 +111,11 @@ async function boot() {
 
   try {
     const me = await api("/auth/me");
-    subtitle.textContent = "Tu sesión está activa.";
+    if (welcomeTitle) welcomeTitle.textContent = "Sesión activa";
+    subtitle.textContent =
+      "Bienvenido a laSalle Health Center. Puede continuar. Cierre la sesión al terminar, sobre todo en dispositivos compartidos.";
     emailEl.textContent = me.email || "—";
-    roleEl.textContent = me.role || "—";
+    roleEl.textContent = (me.role && ROLE_LABELS[me.role]) || me.role || "—";
     if (me.role === "paciente") {
       idLabel.textContent = "ID paciente";
       idValue.textContent = me.patient_id || "—";
@@ -119,8 +128,9 @@ async function boot() {
     }
     setStatus("");
   } catch (e) {
+    if (welcomeTitle) welcomeTitle.textContent = "Sesión no disponible";
     setStatus(String(e.message || e), "error");
-    subtitle.textContent = "No se pudo validar la sesión.";
+    subtitle.textContent = "No se pudo validar la sesión. Vuelve a identificarte en el acceso al portal.";
     setToken(null);
   }
 }

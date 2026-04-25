@@ -50,6 +50,15 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-rogerjove012005@gmail.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-hospital}
       CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-http://localhost:3000,http://127.0.0.1:3000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-laSalle Health Center}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-0}
+      SMTP_USE_STARTTLS: ${SMTP_USE_STARTTLS:-1}
     depends_on:
       postgres:
         condition: service_healthy

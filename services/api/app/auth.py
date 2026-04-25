@@ -1,8 +1,12 @@
 import logging
 import os
 import re
+import secrets
+import smtplib
+import ssl
 import uuid
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
+from email.message import EmailMessage
 from typing import Annotated, Any, Literal
 
 from fastapi import Depends, HTTPException
@@ -605,4 +609,178 @@ def list_users() -> list[dict[str, Any]]:
             )
         ).mappings().all()
     return [dict(r) for r in rows]
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=300)
+    new_password: str = Field(min_length=_PASSWORD_MIN_LEN, max_length=_PASSWORD_MAX_LEN)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        # Keep rules aligned with CreateUserRequest/SelfRegisterRequest
+        if len(v) < _PASSWORD_MIN_LEN or len(v) > _PASSWORD_MAX_LEN:
+            raise ValueError("Contraseña inválida")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("La contraseña debe incluir una letra minúscula")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("La contraseña debe incluir una letra mayúscula")
+        if not re.search(r"\d", v):
+            raise ValueError("La contraseña debe incluir un número")
+        if not re.search(r"[^A-Za-z0-9]", v):
+            raise ValueError("La contraseña debe incluir un símbolo")
+        return v
+
+
+class ResetPasswordResponse(BaseModel):
+    message: str
+
+
+def _app_base_url() -> str:
+    # The frontend is served by nginx on localhost:3000 in docker-compose.
+    return os.getenv("APP_BASE_URL", "http://localhost:3000").rstrip("/")
+
+
+def _smtp_enabled() -> bool:
+    return bool(os.getenv("SMTP_HOST"))
+
+
+def _send_reset_email(*, to_email: str, reset_url: str) -> None:
+    """
+    Send password reset email via SMTP.
+    If SMTP is not configured, raises RuntimeError.
+    """
+    host = os.getenv("SMTP_HOST")
+    if not host:
+        raise RuntimeError("SMTP_HOST is not configured")
+
+    port = int(os.getenv("SMTP_PORT", "587"))
+    user = os.getenv("SMTP_USER", "")
+    password = os.getenv("SMTP_PASSWORD", "")
+    from_email = os.getenv("SMTP_FROM", user or "no-reply@lasalle-health.local")
+    from_name = os.getenv("SMTP_FROM_NAME", "laSalle Health Center")
+    use_ssl = os.getenv("SMTP_USE_SSL", "0").strip().lower() in ("1", "true", "yes")
+    use_starttls = os.getenv("SMTP_USE_STARTTLS", "1").strip().lower() in ("1", "true", "yes")
+
+    msg = EmailMessage()
+    msg["Subject"] = "Restablecer contraseña — laSalle Health Center"
+    msg["From"] = f"{from_name} <{from_email}>"
+    msg["To"] = to_email
+    msg.set_content(
+        "\n".join(
+            [
+                "Hemos recibido una solicitud para restablecer tu contraseña.",
+                "",
+                "Usa este enlace (un solo uso) para establecer una nueva contraseña:",
+                reset_url,
+                "",
+                "Si no has solicitado este cambio, puedes ignorar este mensaje.",
+            ]
+        )
+    )
+
+    if use_ssl:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(host=host, port=port, context=context, timeout=10) as server:
+            if user and password:
+                server.login(user, password)
+            server.send_message(msg)
+        return
+
+    with smtplib.SMTP(host=host, port=port, timeout=10) as server:
+        server.ehlo()
+        if use_starttls:
+            context = ssl.create_default_context()
+            server.starttls(context=context)
+            server.ehlo()
+        if user and password:
+            server.login(user, password)
+        server.send_message(msg)
+
+
+def request_password_reset(req: ForgotPasswordRequest) -> ForgotPasswordResponse:
+    """
+    Generates a one-time token and stores it.
+    For demo environments, we don't send email; we log the reset URL.
+    Always returns OK message to avoid account enumeration.
+    """
+    email_norm = _normalize_email(str(req.email))
+    token = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(minutes=int(os.getenv("PASSWORD_RESET_TTL_MINUTES", "30")))
+
+    with engine().begin() as conn:
+        row = conn.execute(
+            text("SELECT user_id FROM app_users WHERE email = :email"),
+            {"email": email_norm},
+        ).fetchone()
+        if row:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO password_reset_tokens(token, user_id, expires_at)
+                    VALUES (:token, :user_id, :expires_at)
+                    """
+                ),
+                {"token": token, "user_id": str(row.user_id), "expires_at": expires_at},
+            )
+
+            reset_url = f"{_app_base_url()}/reset-password.html?token={token}"
+            if _smtp_enabled():
+                try:
+                    _send_reset_email(to_email=email_norm, reset_url=reset_url)
+                    log.info("PASSWORD RESET email sent: email=%s", email_norm)
+                except Exception as e:
+                    log.exception("PASSWORD RESET email failed: email=%s err=%s", email_norm, e)
+                    # Keep demo log as fallback so the reset can still be completed.
+                    log.warning("PASSWORD RESET (demo): email=%s url=%s", email_norm, reset_url)
+            else:
+                log.warning("PASSWORD RESET (demo): email=%s url=%s", email_norm, reset_url)
+
+    return ForgotPasswordResponse(
+        message="Si el correo está registrado, recibirá un enlace para restablecer la contraseña."
+    )
+
+
+def reset_password(req: ResetPasswordRequest) -> ResetPasswordResponse:
+    token = req.token.strip()
+    now = datetime.now(timezone.utc)
+
+    with engine().begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT token, user_id, expires_at, used_at
+                FROM password_reset_tokens
+                WHERE token = :token
+                """
+            ),
+            {"token": token},
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=400, detail="Token inválido")
+        if row.used_at is not None:
+            raise HTTPException(status_code=400, detail="Token ya usado")
+        if row.expires_at is None or row.expires_at < now:
+            raise HTTPException(status_code=400, detail="Token caducado")
+
+        conn.execute(
+            text("UPDATE app_users SET password_hash = :ph WHERE user_id = :uid"),
+            {"ph": hash_password(req.new_password), "uid": str(row.user_id)},
+        )
+        conn.execute(
+            text("UPDATE password_reset_tokens SET used_at = :now WHERE token = :token"),
+            {"now": now, "token": token},
+        )
+
+    return ResetPasswordResponse(message="Contraseña actualizada. Ya puede iniciar sesión.")
 

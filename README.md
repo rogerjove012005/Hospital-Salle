@@ -73,6 +73,16 @@ Repositorio base para estructurar el proyecto del **laSalle Health Center** (IA 
 - Cada decisión relevante queda registrada como ADR:
   - `docs/adr/0001-<decision>.md`
 
+## Datos (CSV)
+
+El fichero `hospital_dataset.xlsx` (proyecto) puede convertirse a CSV (por defecto se escribe bajo `data/raw/`, carpetas ignoradas por Git según `.gitignore`):
+
+```bash
+python3 scripts/xlsx_to_csv.py hospital_dataset.xlsx data/raw/hospital_dataset.csv
+```
+
+Requisitos: `pip install pandas openpyxl`.
+
 ## Ejecución (placeholder)
 
 Cuando añadáis los contenedores, la idea es poder levantarlo con un comando:

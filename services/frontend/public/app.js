@@ -21,6 +21,45 @@ const registerForm = qs("#registerForm");
 const btnMe = qs("#btnMe");
 const btnLogout = qs("#btnLogout");
 
+const linkForgot = qs("#linkForgot");
+const forgotModal = qs("#forgotModal");
+const forgotForm = qs("#forgotForm");
+const forgotEmail = qs("#forgot-email");
+const forgotStatus = qs("#forgotStatus");
+
+function setForgotStatus(message, kind = "neutral") {
+  if (!forgotStatus) return;
+  forgotStatus.textContent = message || "";
+  forgotStatus.classList.remove("ok", "error");
+  if (kind === "ok") forgotStatus.classList.add("ok");
+  if (kind === "error") forgotStatus.classList.add("error");
+}
+
+function isModalOpen() {
+  return forgotModal && !forgotModal.classList.contains("hidden");
+}
+
+function openForgotModal(prefillEmail) {
+  if (!forgotModal) return;
+  forgotModal.classList.remove("hidden");
+  setForgotStatus("");
+  if (forgotEmail) {
+    if (prefillEmail !== null && prefillEmail !== undefined) {
+      const v = String(prefillEmail);
+      if (v && v !== "undefined" && v !== "null") forgotEmail.value = v;
+    }
+    setTimeout(() => forgotEmail.focus(), 0);
+  }
+  document.body.style.overflow = "hidden";
+}
+
+function closeForgotModal() {
+  if (!forgotModal) return;
+  forgotModal.classList.add("hidden");
+  setForgotStatus("");
+  document.body.style.overflow = "";
+}
+
 function shouldSkipLandingRedirect() {
   return new URLSearchParams(window.location.search).get("noredirect") === "1";
 }
@@ -105,18 +144,70 @@ function setTab(which) {
   panelLogin.classList.toggle("hidden", !isLogin);
   panelRegister.classList.toggle("hidden", isLogin);
   setStatus("");
+  const title = qs("#pageTitle");
+  const sub = qs("#pageSubtitle");
+  const kicker = qs("#formKicker");
   if (isLogin) {
-    qs("h1").textContent = "Iniciar sesión";
-    qs(".header .muted").textContent = "Accede a tu cuenta para continuar.";
+    if (title) title.textContent = "Iniciar sesión";
+    if (sub)
+      sub.textContent =
+        "Use el correo y la contraseña de su cuenta en laSalle Health Center.";
+    if (kicker) kicker.textContent = "Acceso de usuarios registrados";
   } else {
-    qs("h1").textContent = "Crear cuenta";
-    qs(".header .muted").textContent =
-      "Elige Paciente o Médico: se guardará en la base de datos y se te asignará un ID (P… o M…).";
+    if (title) title.textContent = "Alta de usuario";
+    if (sub)
+      sub.textContent =
+        "Complete los datos para registrarse como paciente o personal. Se generarán los identificadores de expediente según el perfil.";
+    if (kicker) kicker.textContent = "Nuevo usuario — laSalle Health Center";
   }
+  if (tabLogin) tabLogin.setAttribute("aria-selected", isLogin ? "true" : "false");
+  if (tabRegister) tabRegister.setAttribute("aria-selected", isLogin ? "false" : "true");
 }
 
 tabLogin.addEventListener("click", () => setTab("login"));
 tabRegister.addEventListener("click", () => setTab("register"));
+
+if (linkForgot) {
+  linkForgot.addEventListener("click", (e) => {
+    e.preventDefault();
+    const loginEmail = qs("#login-email");
+    openForgotModal(loginEmail && typeof loginEmail.value === "string" ? loginEmail.value : "");
+  });
+}
+
+if (forgotModal) {
+  forgotModal.addEventListener("click", (e) => {
+    const t = e.target;
+    if (t && t.getAttribute && t.getAttribute("data-modal-close") === "true") {
+      closeForgotModal();
+    }
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && isModalOpen()) closeForgotModal();
+});
+
+if (forgotForm) {
+  forgotForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = new FormData(forgotForm);
+    const email = form.get("email");
+    try {
+      setForgotStatus("Enviando…");
+      await api("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      setForgotStatus(
+        "Listo. Si el correo está registrado, recibirá un enlace para restablecer la contraseña.",
+        "ok"
+      );
+    } catch (err) {
+      setForgotStatus(String(err.message || err), "error");
+    }
+  });
+}
 
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();

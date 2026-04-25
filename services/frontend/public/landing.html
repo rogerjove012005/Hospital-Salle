@@ -3,42 +3,116 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hospital Salle — Inicio</title>
+    <meta name="theme-color" content="#0f766e" />
+    <title>Mi sesión — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/config.js"></script>
   </head>
   <body>
-    <main class="card">
-      <header class="header">
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a href="/index.html" class="site-logo" aria-label="laSalle Health Center — inicio">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+              <rect x="4" y="4" width="24" height="24" rx="5" stroke="currentColor" stroke-width="1.2" fill="none" />
+              <path d="M16 9v14M9 16h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="site-logo__text">
+            <span class="site-logo__title">laSalle Health Center</span>
+            <span class="site-logo__subtitle">Portal de información clínica</span>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="Enlaces de cabecera">
+          <a href="/index.html">Página de acceso</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="trust-bar">
+      <div class="trust-bar__inner">
+        <span class="trust-bar__item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2.5-9H19V1h-2v1H7V1H5v1H3.5C2.4 2 1 3.4 1 4.5v15C1 20.6 2.4 22 3.5 22h17c1.1 0 2.5-1.4 2.5-2.5v-15C23 2.4 21.6 1 20.5 1z" />
+          </svg>
+          Sesión iniciada
+        </span>
+        <span class="trust-bar__item"> laSalle Health Center — cierre la sesión en equipos compartidos. </span>
+      </div>
+    </div>
+
+    <div class="portal-wrap">
+      <main class="portal-main portal-main--single">
+        <div class="portal-form-column" style="width: 100%">
+          <article class="portal-card auth-card auth-card--landing">
+            <div class="portal-card__head">
+              <span class="portal-card__badge">Área de usuario</span>
+              <header class="header">
+                <p class="kicker">Bienvenida al portal</p>
+                <h1 class="auth-title" id="welcomeTitle">Resumen de su sesión</h1>
+                <p class="muted" id="subtitle">Cargando…</p>
+              </header>
+            </div>
+
+            <div class="portal-card__body" style="padding: 0 20px 22px">
+              <section class="landing" aria-label="Datos de la sesión">
+                <div class="kv" id="sessionKv">
+                  <div class="k">Correo (usuario)</div>
+                  <div class="v" id="email">—</div>
+
+                  <div class="k">Perfil de acceso</div>
+                  <div class="v" id="role">—</div>
+
+                  <div class="k" id="idLabel">ID en el centro</div>
+                  <div class="v" id="idValue">—</div>
+                </div>
+
+                <div class="row" style="margin-top: 16px">
+                  <button id="btnContinue" type="button" class="btn--primary">Continuar</button>
+                  <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
+                </div>
+
+                <div class="credential-strip" style="margin-top: 12px" role="status">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="1" />
+                    <path d="M3 8h18" />
+                  </svg>
+                  <span>Los datos mostrados corresponden a su sesión. Para consultar la historia o resultados, use las opciones
+                    de su perfil (según se implemente en el sistema del centro).</span>
+                </div>
+
+                <div class="status" style="margin-top: 10px" aria-live="polite">
+                  <div id="status" class="statusText muted"></div>
+                </div>
+              </section>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
         <div>
-          <div class="kicker">laSalle Health Center</div>
-          <h1>Bienvenido</h1>
-          <p class="muted" id="subtitle">Cargando tu sesión…</p>
+          <h3>Contacto</h3>
+          <p>laSalle Health Center (demostración)</p>
         </div>
-      </header>
-
-      <section class="landing">
-        <div class="kv">
-          <div class="k">Email</div>
-          <div class="v" id="email">—</div>
-
-          <div class="k">Rol</div>
-          <div class="v" id="role">—</div>
-
-          <div class="k" id="idLabel">Identificador</div>
-          <div class="v" id="idValue">—</div>
+        <div>
+          <h3>Legal</h3>
+          <p>
+            <a href="#" onclick="return false">Protección de datos</a> ·
+            <a href="#" onclick="return false">Aviso legal</a>
+          </p>
         </div>
-
-        <div class="row" style="margin-top: 14px">
-          <button id="btnContinue" type="button">Continuar</button>
-          <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
-        </div>
-
-        <section class="status" style="margin-top: 12px">
-          <div id="status" class="statusText muted" aria-live="polite"></div>
-        </section>
-      </section>
-    </main>
+      </div>
+      <div class="site-footer__meta">© laSalle Health Center</div>
+    </footer>
 
     <script src="/landing.js"></script>
   </body>

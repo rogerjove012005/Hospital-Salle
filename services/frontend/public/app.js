@@ -29,6 +29,8 @@ const forgotStatus = qs("#forgotStatus");
 
 const togglePasswordBtn = qs("#togglePassword");
 const loginPasswordInput = qs("#login-password");
+const toggleRegPasswordBtn = qs("#toggleRegPassword");
+const regPasswordInput = qs("#reg-password");
 const rememberMeCheckbox = qs("#rememberMe");
 
 function setForgotStatus(message, kind = "neutral") {
@@ -167,16 +169,12 @@ function setTab(which) {
   const kicker = qs("#formKicker");
   if (isLogin) {
     if (title) title.textContent = "Iniciar sesión";
-    if (sub)
-      sub.textContent =
-        "Use el correo y la contraseña de su cuenta en laSalle Health Center.";
+    if (sub) sub.textContent = "Correo y contraseña de su cuenta en laSalle Health Center.";
     if (kicker) kicker.textContent = "Acceso de usuarios registrados";
   } else {
-    if (title) title.textContent = "Alta de usuario";
-    if (sub)
-      sub.textContent =
-        "Complete los datos para registrarse como paciente o personal. Se generarán los identificadores de expediente según el perfil.";
-    if (kicker) kicker.textContent = "Nuevo usuario — laSalle Health Center";
+    if (title) title.textContent = "Registro";
+    if (sub) sub.textContent = "Datos personales y cuenta de acceso. Solo paciente o personal clínico.";
+    if (kicker) kicker.textContent = "Nuevo usuario";
   }
   if (tabLogin) tabLogin.setAttribute("aria-selected", isLogin ? "true" : "false");
   if (tabRegister) tabRegister.setAttribute("aria-selected", isLogin ? "false" : "true");
@@ -206,18 +204,19 @@ document.addEventListener(
   true
 );
 
-if (togglePasswordBtn && loginPasswordInput) {
-  togglePasswordBtn.addEventListener("click", () => {
-    const isHidden = loginPasswordInput.getAttribute("type") === "password";
-    loginPasswordInput.setAttribute("type", isHidden ? "text" : "password");
-    togglePasswordBtn.setAttribute("data-state", isHidden ? "shown" : "hidden");
-    togglePasswordBtn.setAttribute("aria-pressed", isHidden ? "true" : "false");
-    togglePasswordBtn.setAttribute(
-      "aria-label",
-      isHidden ? "Ocultar contraseña" : "Mostrar contraseña"
-    );
+function wirePasswordToggle(btn, input) {
+  if (!btn || !input) return;
+  btn.addEventListener("click", () => {
+    const isHidden = input.getAttribute("type") === "password";
+    input.setAttribute("type", isHidden ? "text" : "password");
+    btn.setAttribute("data-state", isHidden ? "shown" : "hidden");
+    btn.setAttribute("aria-pressed", isHidden ? "true" : "false");
+    btn.setAttribute("aria-label", isHidden ? "Ocultar contraseña" : "Mostrar contraseña");
   });
 }
+
+wirePasswordToggle(togglePasswordBtn, loginPasswordInput);
+wirePasswordToggle(toggleRegPasswordBtn, regPasswordInput);
 
 if (forgotModal) {
   forgotModal.addEventListener("click", (e) => {
@@ -244,7 +243,7 @@ if (forgotForm) {
         body: JSON.stringify({ email }),
       });
       setForgotStatus(
-        "Listo. Si el correo está registrado, recibirá un enlace para restablecer la contraseña.",
+        "Listo. Si ese correo está registrado, le enviaremos un mensaje con un enlace para restablecer la contraseña (revise la bandeja de entrada y el spam).",
         "ok"
       );
     } catch (err) {

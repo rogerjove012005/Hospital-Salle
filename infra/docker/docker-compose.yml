@@ -18,6 +18,15 @@ services:
     networks:
       - hospital_net
 
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    networks:
+      - hospital_net
+
   minio:
     image: minio/minio:RELEASE.2025-01-20T14-49-07Z
     command: server /data --console-address ":9001"
@@ -51,19 +60,22 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-hospital}
       CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-http://localhost:3000,http://127.0.0.1:3000}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
+      # Por defecto Mailpit: correo en http://localhost:8025. En producción, usa p. ej. smtp.gmail.com y ajusta puerto/TLS.
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@lasallesanidad.com}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-laSalle Health Center}
       SMTP_USE_SSL: ${SMTP_USE_SSL:-0}
-      SMTP_USE_STARTTLS: ${SMTP_USE_STARTTLS:-1}
+      SMTP_USE_STARTTLS: ${SMTP_USE_STARTTLS:-0}
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     ports:
       - "${API_PORT:-8000}:8000"
     healthcheck:

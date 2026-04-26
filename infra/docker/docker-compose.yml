@@ -111,6 +111,7 @@ services:
       context: ../../services/frontend
     environment:
       API_BASE_URL: ${API_BASE_URL:-/api}
+      MAILPIT_UI_URL: ${MAILPIT_UI_URL:-http://localhost:8025}
     depends_on:
       api:
         condition: service_healthy

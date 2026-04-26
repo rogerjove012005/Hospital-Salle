@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260426g" />
+    <link rel="stylesheet" href="/styles.css?v=20260426h" />
     <script src="/config.js"></script>
   </head>
   <body class="auth-body">
@@ -422,7 +422,17 @@
           <h2 class="modal__title" id="forgotTitle">Recuperar contraseña</h2>
           <button class="modal__close" type="button" aria-label="Cerrar" data-modal-close="true">×</button>
         </div>
-        <p class="modal__text">Introduce tu correo. Si existe una cuenta, enviaremos un enlace para restablecer la contraseña.</p>
+        <p class="modal__text">
+          Escribe el <strong>correo con el que se registró</strong> en el portal. El mensaje con el enlace de recuperación se envía
+          <strong>a esa misma dirección</strong> (el servidor solo usa «remitente» para enviar, como en cualquier sitio web).
+        </p>
+        <p class="dev-mailpit-hint">
+          <strong>Pruebas con Mailpit (Docker):</strong> si el API entrega a Mailpit, abre la
+          <a class="dev-mailpit-hint__link" data-mailpit-link href="http://localhost:8025" target="_blank" rel="noopener noreferrer"
+            >bandeja de pruebas (Mailpit)</a
+          >. Es un <strong>único buzón</strong> (no pide inicio de sesión): verás el correo cuyo destinatario es el que has escrito arriba. Con
+          Gmail y SMTP real, revisa el buzón de <em>ese</em> correo, no otra bandeja.
+        </p>
         <form id="forgotForm" class="modal__form" autocomplete="on">
           <div class="field">
             <label for="forgot-email">Correo</label>
@@ -439,6 +449,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260426g"></script>
+    <script src="/app.js?v=20260426h"></script>
   </body>
 </html>

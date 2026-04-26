@@ -649,8 +649,48 @@ def _app_base_url() -> str:
     return os.getenv("APP_BASE_URL", "http://localhost:3000").rstrip("/")
 
 
+def _running_in_docker() -> bool:
+    try:
+        return os.path.exists("/.dockerenv")
+    except OSError:
+        return False
+
+
+def _resolve_smtp_host() -> str:
+    """
+    Si SMTP_HOST en el .env va vacío, Docker Compose deja la variable a "" y
+    antes se desactivaba el envío. En contenedor usamos 'mailpit' por defecto.
+    """
+    h = (os.getenv("SMTP_HOST") or "").strip()
+    if h:
+        return h
+    if _running_in_docker():
+        return "mailpit"
+    return ""
+
+
+def _resolve_smtp_port() -> int:
+    host = _resolve_smtp_host()
+    raw = (os.getenv("SMTP_PORT") or "").strip()
+    if raw.isdigit():
+        port = int(raw)
+        # .env a menudo trae 587; Mailpit en docker escucha en 1025
+        if host == "mailpit" and port == 587:
+            return 1025
+        return port
+    if host == "mailpit":
+        return 1025
+    return 587
+
+
+def _resolve_smtp_starttls() -> bool:
+    if _resolve_smtp_host() == "mailpit":
+        return False
+    return os.getenv("SMTP_USE_STARTTLS", "1").strip().lower() in ("1", "true", "yes")
+
+
 def _smtp_enabled() -> bool:
-    return bool(os.getenv("SMTP_HOST"))
+    return bool(_resolve_smtp_host())
 
 
 _SMTP_PLACEHOLDER_FRAGMENTS = ("tu_email", "tu_correo", "your@", "your_email", "ejemplo@")
@@ -668,11 +708,11 @@ def _send_reset_email(*, to_email: str, reset_url: str) -> None:
     Send password reset email via SMTP.
     If SMTP is not configured, raises RuntimeError.
     """
-    host = (os.getenv("SMTP_HOST") or "").strip()
+    host = _resolve_smtp_host()
     if not host:
         raise RuntimeError("SMTP_HOST is not configured")
 
-    port = int(os.getenv("SMTP_PORT", "587"))
+    port = _resolve_smtp_port()
     user = (os.getenv("SMTP_USER") or "").strip()
     # Gmail App Passwords are 16 chars; the UI shows them with spaces (e.g. "abcd efgh ijkl mnop").
     # smtplib needs them without spaces. Strip every whitespace defensively.
@@ -681,7 +721,7 @@ def _send_reset_email(*, to_email: str, reset_url: str) -> None:
     from_email = (os.getenv("SMTP_FROM") or user or "no-reply@lasalle-health.local").strip()
     from_name = os.getenv("SMTP_FROM_NAME", "laSalle Health Center")
     use_ssl = os.getenv("SMTP_USE_SSL", "0").strip().lower() in ("1", "true", "yes")
-    use_starttls = os.getenv("SMTP_USE_STARTTLS", "1").strip().lower() in ("1", "true", "yes")
+    use_starttls = _resolve_smtp_starttls()
 
     # Fail fast with a clear message if the .env still has the example values.
     if _looks_like_placeholder(user) or _looks_like_placeholder(from_email):
@@ -693,6 +733,7 @@ def _send_reset_email(*, to_email: str, reset_url: str) -> None:
     msg = EmailMessage()
     msg["Subject"] = "Restablecer contraseña — laSalle Health Center"
     msg["From"] = f"{from_name} <{from_email}>"
+    # Destinatario: el correo que el usuario pide en recuperar; FROM es solo el remitente (SMTP de la plataforma).
     msg["To"] = to_email
     msg.set_content(
         "\n".join(

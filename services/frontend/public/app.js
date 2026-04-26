@@ -342,4 +342,13 @@ async function boot() {
   }
 }
 
+function applyMailpitUiUrl() {
+  const raw = typeof window !== "undefined" && window.MAILPIT_UI_URL;
+  const u = (raw && String(raw).trim()) || "http://localhost:8025";
+  document.querySelectorAll("a[data-mailpit-link]").forEach((a) => {
+    a.setAttribute("href", u);
+  });
+}
+
+applyMailpitUiUrl();
 boot();

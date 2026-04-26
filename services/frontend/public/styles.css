@@ -1141,10 +1141,32 @@ form .row > div {
 }
 
 .modal__text {
-  margin: var(--space-4) 0 var(--space-6);
+  margin: var(--space-4) 0 var(--space-5);
   color: var(--text-muted);
   font-size: 0.92rem;
   line-height: 1.55;
+}
+
+.dev-mailpit-hint {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  background: #f0fdf9;
+  border: 1px solid rgba(20, 184, 166, 0.22);
+  border-radius: 10px;
+  color: #57534e;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.dev-mailpit-hint__link {
+  color: var(--brand-dark);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dev-mailpit-hint__link:hover {
+  color: var(--brand);
 }
 
 .modal__form {

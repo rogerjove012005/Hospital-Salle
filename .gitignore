@@ -29,6 +29,7 @@ data/models/
 *.db
 *.sqlite
 *.sqlite3
+*.xlsx
 
 # Model artifacts
 *.pt

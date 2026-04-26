@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Acceso al portal — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260426h" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="auth-body">
+    <a class="skip-link" href="#authCard">Saltar al formulario de acceso</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a href="/" class="site-logo" aria-label="Inicio laSalle Health Center">
+          <span class="site-logo__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+              <rect x="4" y="4" width="24" height="24" rx="5" stroke="currentColor" stroke-width="1.2" fill="none" />
+              <path
+                d="M16 9v14M9 16h14"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <span class="site-logo__text">
+            <span class="site-logo__title">laSalle Health Center</span>
+            <span class="site-logo__subtitle">Portal de información clínica</span>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="Enlaces de cabecera">
+          <a href="/landing.html">Mi portal</a>
+          <a href="#authCard">Acceso</a>
+          <a href="https://www.w3.org/WAI/standards-guidelines/" rel="noopener noreferrer">Accesibilidad</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="trust-bar" role="region" aria-label="Información de seguridad">
+      <div class="trust-bar__inner">
+        <span class="trust-bar__item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v2h-2V7zm0 4h2v6h-2v-6z"
+            />
+          </svg>
+          Conexión cifrada (HTTPS)
+        </span>
+        <span class="trust-bar__item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"
+            />
+          </svg>
+          Acceso restringido — laSalle Health Center
+        </span>
+      </div>
+    </div>
+
+    <div class="portal-wrap">
+      <main class="portal-main">
+        <aside class="portal-hero" aria-label="Sobre el portal">
+          <div class="portal-hero__overlay" aria-hidden="true"></div>
+          <div class="portal-hero__content">
+            <span class="portal-hero__pill" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+              </svg>
+              Acceso seguro al portal
+            </span>
+            <h2 class="portal-hero__title">Un solo acceso para pacientes y personal sanitario</h2>
+            <p class="portal-hero__lede">
+              Consulta de expediente, citas y datos de contacto con la confidencialidad y el trazado normativo de un entorno
+              asistencial real.
+            </p>
+            <ul class="portal-hero__features" role="list">
+              <li class="hero-feature">
+                <span class="hero-feature__icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="11" width="16" height="9" rx="2"/>
+                    <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+                  </svg>
+                </span>
+                <div>
+                  <p class="hero-feature__title">Cifrado y sesión segura</p>
+                  <p class="hero-feature__sub">Conexión TLS y autenticación con credenciales.</p>
+                </div>
+              </li>
+              <li class="hero-feature">
+                <span class="hero-feature__icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12l2 2 4-4"/>
+                    <path d="M21 7H11"/>
+                    <path d="M21 12h-7"/>
+                    <path d="M21 17h-7"/>
+                  </svg>
+                </span>
+                <div>
+                  <p class="hero-feature__title">Privacidad (RGPD)</p>
+                  <p class="hero-feature__sub">Tratamiento de datos de salud bajo criterio clínico.</p>
+                </div>
+              </li>
+              <li class="hero-feature">
+                <span class="hero-feature__icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 7v5l3 2"/>
+                  </svg>
+                </span>
+                <div>
+                  <p class="hero-feature__title">Disponible 24/7</p>
+                  <p class="hero-feature__sub">Acceso en línea a la información de su perfil.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </aside>
+
+        <div class="portal-form-column">
+          <article class="portal-card auth-card" id="authCard">
+            <div class="portal-card__head">
+              <header class="header">
+                <p class="kicker" id="formKicker">Acceso de usuarios registrados</p>
+                <h1 class="auth-title" id="pageTitle">Iniciar sesión</h1>
+                <p class="muted" id="pageSubtitle">Correo y contraseña de su cuenta en laSalle Health Center.</p>
+              </header>
+            </div>
+
+            <div class="tabs" role="tablist" aria-label="Tipo de trámite">
+              <button class="tab active" id="tabLogin" type="button" role="tab" aria-selected="true">Iniciar sesión</button>
+              <button class="tab" id="tabRegister" type="button" role="tab" aria-selected="false">Registro</button>
+            </div>
+
+            <section id="panelLogin" class="auth-panel" role="tabpanel">
+              <form id="loginForm" autocomplete="on" novalidate>
+                <div class="form-block">
+                  <p class="form-block__title">Credenciales</p>
+                  <div class="field">
+                    <label for="login-email">Correo (usuario)</label>
+                    <div class="input-wrap">
+                      <span class="input-wrap__icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="5" width="18" height="14" rx="2"/>
+                          <path d="M3 7l9 6 9-6"/>
+                        </svg>
+                      </span>
+                      <input
+                        id="login-email"
+                        name="email"
+                        type="email"
+                        autocomplete="username"
+                        inputmode="email"
+                        placeholder="usuario@dominio.com"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field__row">
+                      <label for="login-password">Contraseña</label>
+                      <a href="#" id="linkForgot" class="field__link">¿Has olvidado tu contraseña?</a>
+                    </div>
+                    <div class="input-wrap input-wrap--with-action">
+                      <span class="input-wrap__icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="4" y="11" width="16" height="9" rx="2"/>
+                          <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+                        </svg>
+                      </span>
+                      <input
+                        id="login-password"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        placeholder="Introduzca su contraseña"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="input-wrap__action"
+                        id="togglePassword"
+                        aria-label="Mostrar contraseña"
+                        aria-pressed="false"
+                        data-state="hidden"
+                      >
+                        <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="icon-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M17.94 17.94A10.5 10.5 0 0 1 12 19c-6.5 0-10-7-10-7a18.6 18.6 0 0 1 4.06-5.06"/>
+                          <path d="M9.9 4.24A10.6 10.6 0 0 1 12 4c6.5 0 10 7 10 7a18.4 18.4 0 0 1-2.16 3.19"/>
+                          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                          <path d="M3 3l18 18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <label class="check">
+                    <input type="checkbox" id="rememberMe" name="remember" checked />
+                    <span class="check__box" aria-hidden="true">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12l5 5L20 7"/>
+                      </svg>
+                    </span>
+                    <span class="check__text">Recuérdame en este dispositivo</span>
+                  </label>
+                </div>
+                <button type="submit" class="btn--primary btn--with-icon">
+                  <span>Entrar al portal</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14"/>
+                    <path d="M13 6l6 6-6 6"/>
+                  </svg>
+                </button>
+              </form>
+            </section>
+
+            <section id="panelRegister" class="auth-panel hidden" role="tabpanel">
+              <form id="registerForm" class="form-register" autocomplete="on">
+                <div class="form-block">
+                  <p class="form-block__title">Personales</p>
+                  <div class="field">
+                    <label for="reg-role">Perfil</label>
+                    <div class="input-wrap input-wrap--select">
+                      <span class="input-wrap__icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM8 11c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3M4 20v-1c0-2.21 3.58-4 8-4s8 1.79 8 4v1"/>
+                        </svg>
+                      </span>
+                      <select id="reg-role" name="role" required>
+                        <option value="paciente" selected>Paciente</option>
+                        <option value="medico">Médico / personal clínico</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="field">
+                      <label for="reg-first">Nombre</label>
+                      <div class="input-wrap">
+                        <span class="input-wrap__icon" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="4"/>
+                            <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/>
+                          </svg>
+                        </span>
+                        <input id="reg-first" name="first_name" type="text" autocomplete="given-name" placeholder="Nombre" required />
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="reg-last">Apellidos</label>
+                      <div class="input-wrap">
+                        <span class="input-wrap__icon" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="4"/>
+                            <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/>
+                          </svg>
+                        </span>
+                        <input id="reg-last" name="last_name" type="text" autocomplete="family-name" placeholder="Apellidos" required />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="reg-phone">Teléfono</label>
+                    <div class="input-wrap">
+                      <span class="input-wrap__icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5.5 5.5L15 14l5 2v4a1 1 0 0 1-1 1A17 17 0 0 1 3 5a1 1 0 0 1 1-1z"/>
+                        </svg>
+                      </span>
+                      <input id="reg-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+34 600 000 000" required />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="field">
+                      <label for="reg-dob">Fecha de nacimiento</label>
+                      <div class="input-wrap">
+                        <span class="input-wrap__icon" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="16" rx="2"/>
+                            <path d="M3 9h18M8 3v4M16 3v4"/>
+                          </svg>
+                        </span>
+                        <input id="reg-dob" name="date_of_birth" type="date" required />
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="reg-sex">Sexo</label>
+                      <div class="input-wrap input-wrap--select">
+                        <span class="input-wrap__icon" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="3"/>
+                            <path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/>
+                          </svg>
+                        </span>
+                        <select id="reg-sex" name="sex" required>
+                          <option value="M">Masculino</option>
+                          <option value="F">Femenino</option>
+                          <option value="O">Otro / N/C</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-block">
+                  <p class="form-block__title">Cuenta</p>
+                  <div class="field">
+                    <label for="reg-email">Correo (usuario)</label>
+                    <div class="input-wrap">
+                      <span class="input-wrap__icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="5" width="18" height="14" rx="2"/>
+                          <path d="M3 7l9 6 9-6"/>
+                        </svg>
+                      </span>
+                      <input id="reg-email" name="email" type="email" autocomplete="username" inputmode="email" placeholder="correo@dominio.com" required />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="reg-password">Contraseña</label>
+                    <div class="input-wrap input-wrap--with-action">
+                      <span class="input-wrap__icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="4" y="11" width="16" height="9" rx="2"/>
+                          <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+                        </svg>
+                      </span>
+                      <input
+                        id="reg-password"
+                        name="password"
+                        type="password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        maxlength="128"
+                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$"
+                        title="Mínimo 8 caracteres, con mayúscula, minúscula, número y un símbolo"
+                        placeholder="Cree una contraseña segura"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="input-wrap__action"
+                        id="toggleRegPassword"
+                        aria-label="Mostrar contraseña"
+                        aria-pressed="false"
+                        data-state="hidden"
+                      >
+                        <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="icon-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M17.94 17.94A10.5 10.5 0 0 1 12 19c-6.5 0-10-7-10-7a18.6 18.6 0 0 1 4.06-5.06"/>
+                          <path d="M9.9 4.24A10.6 10.6 0 0 1 12 4c6.5 0 10 7 10 7a18.4 18.4 0 0 1-2.16 3.19"/>
+                          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                          <path d="M3 3l18 18"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <p class="form-hint" id="regPasswordHint">8+ caracteres: mayúscula, minúscula, número y símbolo.</p>
+                  </div>
+                </div>
+                <button type="submit" class="btn--primary">Crear cuenta</button>
+                <p class="register-footnote">Tras el alta se asigna un identificador de expediente (P… o M…).</p>
+              </form>
+            </section>
+
+            <div class="portal-card__foot">
+              <div class="status" aria-live="polite">
+                <div id="status" class="statusText" role="status"></div>
+              </div>
+              <section class="session hidden" id="sessionPanel">
+                <div class="row" style="margin-top: 8px">
+                  <button id="btnMe" class="secondary" type="button">Detalle de sesión</button>
+                  <button id="btnLogout" class="secondary" type="button">Cerrar sesión</button>
+                </div>
+                <pre id="output" class="output hidden" aria-label="Detalle de perfil">{}</pre>
+              </section>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+
+    <footer class="site-footer site-footer--rich" role="contentinfo" aria-label="pie de página">
+      <div class="site-footer__shell site-footer__shell--simple">
+        <div class="site-footer__simple-top site-footer__simple-top--only-contact">
+          <p class="site-footer__simple-contact">
+            <a href="tel:+34932202000">+34 932 20 20 00</a>
+            <span class="site-footer__sep" aria-hidden="true">·</span>
+            <a href="mailto:contacto@lasallesanidad.com">contacto@lasallesanidad.com</a>
+          </p>
+        </div>
+        <div class="site-footer__simple-mid">
+          <p class="site-footer__simple-hours">
+            Atención <span class="site-footer__tag-muted">(portal):</span> L–V 8:00–20:00 · S 9:00–14:00
+          </p>
+          <nav class="site-footer__simple-nav" aria-label="Información legal">
+            <a href="#" onclick="return false">Aviso legal</a>
+            <a href="#" onclick="return false">Privacidad</a>
+            <a href="https://www.w3.org/WAI/standards-guidelines/" rel="noopener noreferrer">Accesibilidad</a>
+          </nav>
+        </div>
+        <div class="site-footer__meta site-footer__meta--rich">
+          <p>© 2026 laSalle Health Center · Proyecto académico; datos de ejemplo, sin valor clínico.</p>
+        </div>
+      </div>
+    </footer>
+
+    <div class="modal hidden" id="forgotModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+      <div class="modal__backdrop" data-modal-close="true"></div>
+      <div class="modal__panel" role="document">
+        <div class="modal__head">
+          <h2 class="modal__title" id="forgotTitle">Recuperar contraseña</h2>
+          <button class="modal__close" type="button" aria-label="Cerrar" data-modal-close="true">×</button>
+        </div>
+        <p class="modal__text">
+          Escribe el <strong>correo con el que se registró</strong> en el portal. El mensaje con el enlace de recuperación se envía
+          <strong>a esa misma dirección</strong> (el servidor solo usa «remitente» para enviar, como en cualquier sitio web).
+        </p>
+        <p class="dev-mailpit-hint">
+          <strong>Pruebas con Mailpit (Docker):</strong> si el API entrega a Mailpit, abre la
+          <a class="dev-mailpit-hint__link" data-mailpit-link href="http://localhost:8025" target="_blank" rel="noopener noreferrer"
+            >bandeja de pruebas (Mailpit)</a
+          >. Es un <strong>único buzón</strong> (no pide inicio de sesión): verás el correo cuyo destinatario es el que has escrito arriba. Con
+          Gmail y SMTP real, revisa el buzón de <em>ese</em> correo, no otra bandeja.
+        </p>
+        <form id="forgotForm" class="modal__form" autocomplete="on">
+          <div class="field">
+            <label for="forgot-email">Correo</label>
+            <input id="forgot-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="usuario@dominio.com" required />
+          </div>
+          <div class="modal__actions">
+            <button class="secondary" type="button" data-modal-close="true">Cancelar</button>
+            <button class="btn--primary" type="submit">Enviar enlace</button>
+          </div>
+        </form>
+        <div class="status" aria-live="polite" style="margin-top: 10px">
+          <div id="forgotStatus" class="statusText"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js?v=20260426h"></script>
+  </body>
+</html>

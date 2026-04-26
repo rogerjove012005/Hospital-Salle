@@ -1,0 +1,2 @@
+window.API_BASE_URL = "${API_BASE_URL}";
+window.MAILPIT_UI_URL = "${MAILPIT_UI_URL}";

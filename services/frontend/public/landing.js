@@ -9,6 +9,7 @@ const qs = (s) => document.querySelector(s);
 const qsa = (s) => document.querySelectorAll(s);
 
 const userNameEl = qs("#userName");
+const avatarInitialsEl = qs("#avatarInitials");
 const dashSubEl = qs("#dashSub");
 const chipRoleEl = qs("#chipRole");
 const chipIdEl = qs("#chipId");
@@ -43,12 +44,20 @@ function setStatus(message, kind = "neutral") {
 }
 
 function getToken() {
-  return localStorage.getItem("access_token");
+  return (
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token") ||
+    null
+  );
 }
 
 function setToken(token) {
-  if (!token) localStorage.removeItem("access_token");
-  else localStorage.setItem("access_token", token);
+  if (!token) {
+    localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
+    return;
+  }
+  localStorage.setItem("access_token", token);
 }
 
 function formatApiDetail(detail) {
@@ -129,6 +138,14 @@ function deriveDisplayName(me) {
   return local.charAt(0).toUpperCase() + local.slice(1);
 }
 
+function deriveInitials(name) {
+  if (!name || name === "—") return "·";
+  const cleaned = String(name).replace(/[^A-Za-z\u00C0-\u017F]+/g, " ").trim();
+  if (!cleaned) return "·";
+  const parts = cleaned.split(/\s+/).slice(0, 2);
+  return parts.map((p) => p.charAt(0).toUpperCase()).join("") || cleaned.charAt(0).toUpperCase();
+}
+
 function applyRoleSpecifics(me) {
   const role = me.role;
 
@@ -190,10 +207,12 @@ async function boot() {
 
   try {
     const me = await api("/auth/me");
-    userNameEl.textContent = deriveDisplayName(me);
+    const display = deriveDisplayName(me);
+    userNameEl.textContent = display;
+    if (avatarInitialsEl) avatarInitialsEl.textContent = deriveInitials(display);
     dashSubEl.textContent = me.email
-      ? `Sesión activa para ${me.email}. Cierre sesión al terminar, sobre todo en equipos compartidos.`
-      : "Sesión activa. Cierre sesión al terminar.";
+      ? `Sesión activa · ${me.email}`
+      : "Sesión activa.";
     applyRoleSpecifics(me);
     setLoginMeta();
     mNextAppt.textContent = "—";

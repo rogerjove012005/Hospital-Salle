@@ -27,6 +27,10 @@ const forgotForm = qs("#forgotForm");
 const forgotEmail = qs("#forgot-email");
 const forgotStatus = qs("#forgotStatus");
 
+const togglePasswordBtn = qs("#togglePassword");
+const loginPasswordInput = qs("#login-password");
+const rememberMeCheckbox = qs("#rememberMe");
+
 function setForgotStatus(message, kind = "neutral") {
   if (!forgotStatus) return;
   forgotStatus.textContent = message || "";
@@ -80,12 +84,26 @@ function setStatus(message, kind = "neutral") {
 }
 
 function getToken() {
-  return localStorage.getItem("access_token");
+  return (
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token") ||
+    null
+  );
 }
 
-function setToken(token) {
-  if (!token) localStorage.removeItem("access_token");
-  else localStorage.setItem("access_token", token);
+function setToken(token, persist = true) {
+  if (!token) {
+    localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
+    return;
+  }
+  if (persist) {
+    localStorage.setItem("access_token", token);
+    sessionStorage.removeItem("access_token");
+  } else {
+    sessionStorage.setItem("access_token", token);
+    localStorage.removeItem("access_token");
+  }
 }
 
 function formatApiDetail(detail) {
@@ -167,29 +185,39 @@ function setTab(which) {
 tabLogin.addEventListener("click", () => setTab("login"));
 tabRegister.addEventListener("click", () => setTab("register"));
 
-if (linkForgot) {
-  linkForgot.addEventListener("click", (e) => {
-    e.preventDefault();
-    const loginEmail = qs("#login-email");
-    openForgotModal(loginEmail && typeof loginEmail.value === "string" ? loginEmail.value : "");
-  });
+function triggerForgotModal(e) {
+  if (e) e.preventDefault();
+  const loginEmail = qs("#login-email");
+  openForgotModal(loginEmail && typeof loginEmail.value === "string" ? loginEmail.value : "");
 }
 
-// Defensive: some desktop browsers/extensions can interfere with direct listeners on anchors.
-// Delegation ensures the modal still opens reliably.
+if (linkForgot) linkForgot.addEventListener("click", triggerForgotModal);
+
+// Defensive delegation: works even if the anchor is replaced or hidden behind another element.
 document.addEventListener(
   "click",
   (e) => {
     const t = e.target;
-    if (!t) return;
-    const el = t.closest ? t.closest("#linkForgot") : null;
+    if (!t || !t.closest) return;
+    const el = t.closest("#linkForgot, [data-forgot-trigger]");
     if (!el) return;
-    e.preventDefault();
-    const loginEmail = qs("#login-email");
-    openForgotModal(loginEmail && typeof loginEmail.value === "string" ? loginEmail.value : "");
+    triggerForgotModal(e);
   },
   true
 );
+
+if (togglePasswordBtn && loginPasswordInput) {
+  togglePasswordBtn.addEventListener("click", () => {
+    const isHidden = loginPasswordInput.getAttribute("type") === "password";
+    loginPasswordInput.setAttribute("type", isHidden ? "text" : "password");
+    togglePasswordBtn.setAttribute("data-state", isHidden ? "shown" : "hidden");
+    togglePasswordBtn.setAttribute("aria-pressed", isHidden ? "true" : "false");
+    togglePasswordBtn.setAttribute(
+      "aria-label",
+      isHidden ? "Ocultar contraseña" : "Mostrar contraseña"
+    );
+  });
+}
 
 if (forgotModal) {
   forgotModal.addEventListener("click", (e) => {
@@ -230,6 +258,7 @@ loginForm.addEventListener("submit", async (e) => {
   const form = new FormData(loginForm);
   const email = form.get("email");
   const password = form.get("password");
+  const persist = rememberMeCheckbox ? !!rememberMeCheckbox.checked : true;
 
   try {
     setStatus("Entrando…");
@@ -237,7 +266,7 @@ loginForm.addEventListener("submit", async (e) => {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    setToken(data.access_token);
+    setToken(data.access_token, persist);
     goToLanding();
   } catch (err) {
     setStatus(String(err.message || err), "error");

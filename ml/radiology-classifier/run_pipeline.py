@@ -22,7 +22,7 @@ class PipelineTest:
         """Ejecuta todo el pipeline"""
         
         print("\n" + "="*70)
-        print("PIPELINE COMPLETO: MODELO DE CLASIFICACIÓN DE RADIOGRAFÍAS")
+        print("MODELO DE CLASIFICACIÓN DE RADIOGRAFÍAS")
         print("="*70)
         
         # 1. Dataset

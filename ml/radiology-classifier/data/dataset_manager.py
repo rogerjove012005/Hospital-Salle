@@ -12,6 +12,7 @@ from pathlib import Path
 import urllib.request
 import zipfile
 import shutil
+from PIL import Image
 
 class DatasetManager:
     """Gestor del dataset"""
@@ -31,9 +32,6 @@ class DatasetManager:
         Crea un dataset sintético para demostración
         En producción se usaría dataset real
         """
-        from PIL import Image
-        import random
-        
         print("Creando dataset sintético...")
         
         classes = ['COVID-19', 'NEUMANIA', 'NORMAL']

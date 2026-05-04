@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from PIL import Image
-import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
@@ -87,80 +85,72 @@ class DataPreprocessor:
         
         return X_train, X_val, X_test, y_train, y_val, y_test
     
-    def create_data_generators(self):
-        """Crea generadores con data augmentation"""
-        
-        # Data augmentation para training
-        train_datagen = ImageDataGenerator(
-            rotation_range=20,
-            width_shift_range=0.2,
-            height_shift_range=0.2,
-            horizontal_flip=True,
-            zoom_range=0.2,
-            fill_mode='nearest',
-            brightness_range=[0.8, 1.2],  # Variación de contraste
-        )
-        
-        # Sin augmentation para validation y test
-        val_test_datagen = ImageDataGenerator()
-        
-        return train_datagen, val_test_datagen
-    
+    def _augment_image(self, img):
+        """Aplica augmentaciones aleatorias a una imagen (numpy)"""
+        rng = np.random.default_rng()
+
+        # Flip horizontal
+        if rng.random() > 0.5:
+            img = img[:, ::-1, :]
+
+        # Rotación ±20°
+        angle = rng.uniform(-20, 20)
+        from PIL import Image as PILImage
+        pil = PILImage.fromarray((img * 255).astype(np.uint8))
+        pil = pil.rotate(angle, resample=PILImage.BILINEAR, fillcolor=0)
+        img = np.array(pil) / 255.0
+
+        # Desplazamiento ±20%
+        shift_x = int(rng.uniform(-0.2, 0.2) * img.shape[1])
+        shift_y = int(rng.uniform(-0.2, 0.2) * img.shape[0])
+        img = np.roll(img, shift_y, axis=0)
+        img = np.roll(img, shift_x, axis=1)
+
+        # Brillo ±20%
+        factor = rng.uniform(0.8, 1.2)
+        img = np.clip(img * factor, 0, 1)
+
+        return img.astype(np.float32)
+
+    def _batch_generator(self, X, y, shuffle=False):
+        """Generador de batches con augmentation opcional"""
+        indices = np.arange(len(X))
+        if shuffle:
+            rng = np.random.default_rng(self.seed)
+            rng.shuffle(indices)
+
+        for start in range(0, len(indices), self.batch_size):
+            batch_idx = indices[start:start + self.batch_size]
+            X_batch = np.array([self._augment_image(X[i]) for i in batch_idx]) if shuffle \
+                      else X[batch_idx]
+            yield X_batch, y[batch_idx]
+
     def create_train_generator(self, X_train, y_train):
-        """Crea generador de batch para training"""
-        train_datagen, _ = self.create_data_generators()
-        
-        train_generator = train_datagen.flow(
-            X_train, y_train,
-            batch_size=self.batch_size,
-            shuffle=True,
-            seed=self.seed
-        )
-        
-        return train_generator
-    
+        """Generador infinito con augmentation para training"""
+        while True:
+            yield from self._batch_generator(X_train, y_train, shuffle=True)
+
     def create_val_generator(self, X_val, y_val):
-        """Crea generador de batch para validación"""
-        _, val_test_datagen = self.create_data_generators()
-        
-        val_generator = val_test_datagen.flow(
-            X_val, y_val,
-            batch_size=self.batch_size,
-            shuffle=False,
-            seed=self.seed
-        )
-        
-        return val_generator
-    
+        """Generador infinito sin augmentation para validación"""
+        while True:
+            yield from self._batch_generator(X_val, y_val, shuffle=False)
+
     def visualize_augmentation(self, X_sample, y_sample, num_variations=6):
         """Visualiza el efecto de la data augmentation"""
-        train_datagen, _ = self.create_data_generators()
-        
-        # Expandir dimensiones para el generador
-        X_sample_expanded = np.expand_dims(X_sample, axis=0)
-        
         fig, axes = plt.subplots(2, 3, figsize=(12, 8))
         fig.suptitle('Efecto de Data Augmentation', fontsize=12, fontweight='bold')
-        
-        # Mostrar imagen original
+
         axes[0, 0].imshow(X_sample[..., 0], cmap='gray')
         axes[0, 0].set_title('Original')
         axes[0, 0].axis('off')
-        
-        # Mostrar variaciones aumentadas
-        aug_count = 1
+
         for i in range(1, 6):
-            # Generar una variación
-            aug_batch = next(train_datagen.flow(X_sample_expanded, batch_size=1))
-            
-            row = i // 3
-            col = i % 3
-            
-            axes[row, col].imshow(aug_batch[0][..., 0], cmap='gray')
-            axes[row, col].set_title(f'Augmentación {aug_count}')
+            aug = self._augment_image(X_sample)
+            row, col = i // 3, i % 3
+            axes[row, col].imshow(aug[..., 0], cmap='gray')
+            axes[row, col].set_title(f'Augmentación {i}')
             axes[row, col].axis('off')
-            aug_count += 1
-        
+
         plt.tight_layout()
         plt.savefig('data/augmentation_examples.png', dpi=100, bbox_inches='tight')
         print(f"\n✓ Visualización de augmentation guardada")

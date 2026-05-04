@@ -28,9 +28,10 @@ class ModelEvaluator:
     def evaluate(self, X_test, y_test):
         """Evalúa el modelo en el conjunto de test"""
         
-        # Hacer predicciones
-        self.predictions_proba = self.model.predict(X_test, verbose=0)
-        self.predictions = np.argmax(self.predictions_proba, axis=1)
+        # Hacer predicciones (sklearn: aplanar imágenes primero)
+        X_flat = X_test.reshape(len(X_test), -1)
+        self.predictions_proba = self.model.predict_proba(X_flat)
+        self.predictions = self.model.predict(X_flat)
         self.y_true = y_test
         
         print("\n" + "="*60)

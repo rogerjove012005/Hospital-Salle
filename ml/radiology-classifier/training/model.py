@@ -1,225 +1,96 @@
 """
-Arquitectura del modelo CNN para clasificación de radiografías
-Utiliza EfficientNetB4 pre-entrenado con transferencia de aprendizaje
+Modelo de clasificación de radiografías con scikit-learn
+Pipeline: StandardScaler → PCA → MLPClassifier
 """
 
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, models
-from tensorflow.keras.applications import EfficientNetB4
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import (
-    EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-)
 import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.decomposition import PCA
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 
 
 class RadiologyModel:
     """Constructor del modelo de clasificación"""
-    
+
     def __init__(self, num_classes=3, img_size=224):
         self.num_classes = num_classes
         self.img_size = img_size
-        self.model = None
-    
-    def build_transfer_learning_model(self, trainable_layers=20):
+        self.pipeline = None
+
+    def build_model(self, n_pca_components=100):
         """
-        Construye modelo con Transfer Learning usando EfficientNetB4
-        
-        JUSTIFICACIÓN DE LA ARQUITECTURA:
-        - EfficientNetB4: Balance óptimo entre precisión y eficiencia
-        - Pre-entrenado en ImageNet: Capta features generales de imágenes
-        - Fine-tuning: Adapta features a radiografías específicas
-        - Capas personalizadas: Aprende patrones médicos específicos
+        Pipeline:
+        1. StandardScaler  — normaliza features (necesario para PCA)
+        2. PCA(100)        — reduce de ~150k a 100 componentes principales
+        3. MLPClassifier   — red neuronal 256→128→64→num_classes
         """
-        
-        # Cargar modelo pre-entrenado (sin capas fully connected)
-        base_model = EfficientNetB4(
-            input_shape=(self.img_size, self.img_size, 3),
-            include_top=False,
-            weights='imagenet'
-        )
-        
-        # Congelar capas iniciales (features generales)
-        # Fine-tune solo las últimas capas (features específicas médicas)
-        for layer in base_model.layers[:-trainable_layers]:
-            layer.trainable = False
-        
-        # Descongelar últimas capas
-        for layer in base_model.layers[-trainable_layers:]:
-            layer.trainable = True
-        
-        # Construir modelo completo
-        model = models.Sequential([
-            # Input
-            layers.Input(shape=(self.img_size, self.img_size, 3)),
-            
-            # Normalización
-            layers.Lambda(self._normalize_imagenet),
-            
-            # Base pre-entrenada
-            base_model,
-            
-            # Global Average Pooling
-            layers.GlobalAveragePooling2D(),
-            
-            # Capas densas personalizadas
-            layers.Dense(512, activation='relu', 
-                        kernel_regularizer=keras.regularizers.l2(1e-4)),
-            layers.BatchNormalization(),
-            layers.Dropout(0.5),
-            
-            layers.Dense(256, activation='relu',
-                        kernel_regularizer=keras.regularizers.l2(1e-4)),
-            layers.BatchNormalization(),
-            layers.Dropout(0.3),
-            
-            layers.Dense(128, activation='relu',
-                        kernel_regularizer=keras.regularizers.l2(1e-4)),
-            layers.BatchNormalization(),
-            layers.Dropout(0.2),
-            
-            # Output
-            layers.Dense(self.num_classes, activation='softmax')
+        self.pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('pca', PCA(n_components=n_pca_components, random_state=42)),
+            ('classifier', MLPClassifier(
+                hidden_layer_sizes=(256, 128, 64),
+                activation='relu',
+                solver='adam',
+                alpha=1e-4,
+                learning_rate='adaptive',
+                max_iter=300,
+                random_state=42,
+                early_stopping=True,
+                validation_fraction=0.1,
+                n_iter_no_change=15,
+                verbose=False,
+            ))
         ])
-        
-        self.model = model
-        self._log_architecture_decisions()
-        
-        return model
-    
-    def _normalize_imagenet(self, x):
-        """Normaliza según estadísticas de ImageNet"""
-        mean = tf.constant([0.485, 0.456, 0.406])
-        std = tf.constant([0.229, 0.224, 0.225])
-        return (x - mean) / std
-    
-    def compile_model(self, learning_rate=1e-3):
-        """Compila el modelo con loss y optimizador"""
-        
-        # Usar weighted loss para manejar desbalance de clases
-        # En radiografías, los falsos negativos en COVID son críticos
-        class_weights = {
-            0: 1.5,  # COVID-19: más importante detectar
-            1: 1.0,  # Neumonía
-            2: 1.0   # Normal
-        }
-        
-        optimizer = Adam(learning_rate=learning_rate)
-        
-        # Loss: categorical cross-entropy con class weights
-        loss = keras.losses.CategoricalCrossentropy()
-        
-        # Métricas
-        metrics = [
-            keras.metrics.CategoricalAccuracy(name='accuracy'),
-            keras.metrics.Precision(name='precision'),
-            keras.metrics.Recall(name='recall'),
-            keras.metrics.AUC(name='auc')
-        ]
-        
-        self.model.compile(
-            optimizer=optimizer,
-            loss=loss,
-            metrics=metrics
-        )
-        
-        return self.model, class_weights
-    
-    def get_callbacks(self, checkpoint_dir='ml/radiology-classifier/models'):
-        """Crea callbacks para entrenamiento"""
-        
-        callbacks = [
-            # Early stopping para evitar overfitting
-            EarlyStopping(
-                monitor='val_loss',
-                patience=10,
-                restore_best_weights=True,
-                verbose=1
-            ),
-            
-            # Reducir learning rate si no hay mejora
-            ReduceLROnPlateau(
-                monitor='val_loss',
-                factor=0.5,
-                patience=5,
-                min_lr=1e-6,
-                verbose=1
-            ),
-            
-            # Guardar mejor modelo
-            ModelCheckpoint(
-                f'{checkpoint_dir}/best_model.h5',
-                monitor='val_accuracy',
-                save_best_only=True,
-                verbose=0
-            ),
-            
-            # TensorBoard
-            keras.callbacks.TensorBoard(
-                log_dir=f'{checkpoint_dir}/logs',
-                histogram_freq=1,
-                write_graph=True
-            )
-        ]
-        
-        return callbacks
-    
-    def _log_architecture_decisions(self):
-        """Documenta decisiones de arquitectura"""
+        self._log_architecture_decisions(n_pca_components)
+        return self.pipeline
+
+    def get_class_weights(self):
+        """Pesos de clase: COVID-19 tiene mayor peso (crítico no detectar)"""
+        return {0: 1.5, 1: 1.0, 2: 1.0}
+
+    def _log_architecture_decisions(self, n_pca_components):
         print("\n" + "="*60)
         print("ARQUITECTURA DEL MODELO")
         print("="*60)
-        
-        print(f"\n🏗️ BACKBONE:")
-        print(f"  • Modelo: EfficientNetB4")
-        print(f"  • Pre-entrenamiento: ImageNet")
-        print(f"  • Parámetros base: ~17M")
-        
+
+        print(f"\n🏗️ PIPELINE SKLEARN:")
+        print(f"  StandardScaler → PCA({n_pca_components}) → MLP(256-128-64)")
+
         print(f"\n🔧 CONFIGURACIÓN:")
-        print(f"  • Capas congeladas: Primeras capas (features generales)")
-        print(f"  • Capas trainables: Últimas 20 capas (features médicas)")
-        print(f"  • Global Average Pooling: Reduce dimensionalidad")
-        
-        print(f"\n📊 CAPAS PERSONALIZADAS:")
-        print(f"  • Dense 512 + BatchNorm + Dropout(0.5)")
-        print(f"  • Dense 256 + BatchNorm + Dropout(0.3)")
-        print(f"  • Dense 128 + BatchNorm + Dropout(0.2)")
-        print(f"  • Dense 3 + Softmax (output)")
-        
+        n_features = self.img_size ** 2 * 3
+        print(f"  • Entrada: {self.img_size}×{self.img_size}×3 = {n_features:,} features")
+        print(f"  • Tras PCA: {n_pca_components} componentes")
+        print(f"  • MLP capas ocultas: 256 → 128 → 64")
+        print(f"  • Activación: ReLU | Optimizador: Adam")
+        print(f"  • Early stopping: activado (patience=15)")
+
+        print(f"\n📊 REGULARIZACIÓN:")
+        print(f"  • L2 (alpha): 1e-4")
+        print(f"  • Learning rate: adaptativo")
+
         print(f"\n✓ JUSTIFICACIÓN:")
-        print(f"  • Transfer Learning: Aprovechar conocimiento de ImageNet")
-        print(f"  • EfficientNet: Mejor balance precisión/eficiencia")
-        print(f"  • Regularización L2: Prevenir overfitting")
-        print(f"  • Dropout progresivo: Regularización adicional")
-        print(f"  • Batch Normalization: Estabilidad del entrenamiento")
-        
-        print(f"\n⚠️  CONSIDERACIONES MÉDICAS:")
-        print(f"  • Transfer Learning desde ImageNet podría introducir sesgos")
-        print(f"  • Fine-tuning permite adaptación a radiografías")
-        print(f"  • Capas densas capturan interacciones complejas")
-        
-        self.model.summary()
-    
-    def get_model(self):
-        """Retorna el modelo compilado"""
-        return self.model
+        print(f"  • PCA: comprime dimensionalidad preservando máxima varianza")
+        print(f"  • StandardScaler: PCA requiere features con misma escala")
+        print(f"  • MLP: aproximador universal, captura no linealidades")
+        print(f"  • Early stopping: previene overfitting automáticamente")
+
+        print(f"\n⚠️  LIMITACIONES VS DEEP LEARNING:")
+        print(f"  • Sin transfer learning (EfficientNet/ResNet)")
+        print(f"  • PCA lineal: no captura features espaciales complejas")
+        print(f"  • En producción: CNN con transfer learning recomendado")
 
 
 def create_model(num_classes=3, img_size=224, learning_rate=1e-3):
     """Función helper para crear el modelo"""
-    
     print("Construyendo modelo...")
-    
     builder = RadiologyModel(num_classes, img_size)
-    model = builder.build_transfer_learning_model()
-    model, class_weights = builder.compile_model(learning_rate)
-    
-    return model, builder, class_weights
+    pipeline = builder.build_model()
+    class_weights = builder.get_class_weights()
+    return pipeline, builder, class_weights
 
 
 if __name__ == '__main__':
-    # Prueba de construcción
-    model, builder, class_weights = create_model()
+    pipeline, builder, class_weights = create_model()
     print("\n✓ Modelo construido exitosamente")
-    print(f"\nPesos de clases: {class_weights}")
+    print(f"Pesos de clases: {class_weights}")

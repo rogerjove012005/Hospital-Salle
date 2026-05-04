@@ -35,26 +35,21 @@ class ModelTrainer:
         print("\n" + "="*60)
         print("INICIANDO ENTRENAMIENTO")
         print("="*60)
-        
-        # Crear generador para training con augmentation
-        preprocessor = DataPreprocessor(batch_size=batch_size)
-        train_gen = preprocessor.create_train_generator(X_train, y_train_onehot)
-        val_gen = preprocessor.create_val_generator(X_val, y_val_onehot)
-        
+
         # Obtener callbacks
         from training.model import RadiologyModel
         builder = RadiologyModel(num_classes=len(self.class_names))
         callbacks = builder.get_callbacks()
-        
-        # Entrenar
+
+        # Entrenar pasando arrays numpy directamente (necesario para usar class_weight)
         self.history = self.model.fit(
-            train_gen,
-            steps_per_epoch=len(X_train) // batch_size,
-            validation_data=val_gen,
-            validation_steps=len(X_val) // batch_size,
+            X_train, y_train_onehot,
+            batch_size=batch_size,
+            validation_data=(X_val, y_val_onehot),
             epochs=epochs,
             callbacks=callbacks,
             class_weight=self.class_weights,
+            shuffle=True,
             verbose=1
         )
         

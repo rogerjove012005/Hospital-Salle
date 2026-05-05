@@ -1,6 +1,6 @@
 import os
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from minio import Minio
 from sqlalchemy import text
@@ -24,6 +24,13 @@ from .auth import (
     request_password_reset,
     reset_password,
     require_roles,
+)
+from .dashboard_imports import (
+    CsvBatchDetail,
+    CsvImportResult,
+    get_csv_batch_detail,
+    import_csv_file,
+    list_user_csv_imports,
 )
 from .db import engine, init_auth_schema
 
@@ -208,4 +215,28 @@ def list_my_studies(user: UserOut = Depends(require_roles("paciente"))):
             {"pid": user.patient_id},
         ).mappings().all()
     return [dict(r) for r in rows]
+
+
+@app.post("/imports/csv", response_model=CsvImportResult)
+async def imports_csv(
+    file: UploadFile = File(...),
+    user: UserOut = Depends(get_current_user),
+):
+    return await import_csv_file(file, user)
+
+
+@app.get("/imports/csv")
+def imports_csv_list(
+    limit: int = 20,
+    user: UserOut = Depends(get_current_user),
+):
+    return list_user_csv_imports(user, limit=limit)
+
+
+@app.get("/imports/csv/{batch_id}", response_model=CsvBatchDetail)
+def imports_csv_detail(
+    batch_id: str,
+    user: UserOut = Depends(get_current_user),
+):
+    return get_csv_batch_detail(batch_id, user)
 

@@ -113,3 +113,26 @@ def init_auth_schema() -> None:
         conn.execute(text("CREATE SEQUENCE IF NOT EXISTS patient_id_seq;"))
         conn.execute(text("CREATE SEQUENCE IF NOT EXISTS medico_id_seq;"))
 
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS csv_import_batches (
+                  batch_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  user_id UUID NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
+                  source_filename TEXT,
+                  row_count INTEGER NOT NULL DEFAULT 0,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS csv_import_batches_user_id_idx
+                  ON csv_import_batches(user_id);
+                CREATE TABLE IF NOT EXISTS csv_import_rows (
+                  batch_id UUID NOT NULL REFERENCES csv_import_batches(batch_id) ON DELETE CASCADE,
+                  position INTEGER NOT NULL,
+                  fields JSONB NOT NULL,
+                  PRIMARY KEY (batch_id, position)
+                );
+                CREATE INDEX IF NOT EXISTS csv_import_rows_batch_id_idx ON csv_import_rows(batch_id);
+                """
+            )
+        )
+

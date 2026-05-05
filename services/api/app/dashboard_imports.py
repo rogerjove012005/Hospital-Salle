@@ -175,8 +175,10 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
 def list_user_csv_imports(
     user: UserOut,
     limit: int = 20,
+    offset: int = 0,
 ) -> list[CsvBatchListItem]:
     lim = min(max(1, limit), 100)
+    off = max(0, offset)
     uid = str(uuid.UUID(user.user_id))
     with engine().connect() as conn:
         rows = conn.execute(
@@ -187,9 +189,10 @@ def list_user_csv_imports(
                 WHERE user_id = :uid
                 ORDER BY created_at DESC
                 LIMIT :lim
+                OFFSET :off
                 """
             ),
-            {"uid": uid, "lim": lim},
+            {"uid": uid, "lim": lim, "off": off},
         ).mappings().all()
     return [CsvBatchListItem.from_row(r) for r in rows]
 

@@ -228,9 +228,10 @@ async def imports_csv(
 @app.get("/imports/csv")
 def imports_csv_list(
     limit: int = 20,
+    offset: int = 0,
     user: UserOut = Depends(get_current_user),
 ):
-    return list_user_csv_imports(user, limit=limit)
+    return list_user_csv_imports(user, limit=limit, offset=offset)
 
 
 @app.get("/imports/csv/{batch_id}", response_model=CsvBatchDetail)

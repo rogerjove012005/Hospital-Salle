@@ -1,6 +1,6 @@
 import os
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from minio import Minio
 from sqlalchemy import text
@@ -28,6 +28,7 @@ from .auth import (
 from .dashboard_imports import (
     CsvBatchDetail,
     CsvImportResult,
+    count_user_csv_imports,
     get_csv_batch_detail,
     import_csv_file,
     list_user_csv_imports,
@@ -241,7 +242,15 @@ def imports_csv_list(
     limit: int = 20,
     offset: int = 0,
     user: UserOut = Depends(get_current_user),
+    response: Response = None,
 ):
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="limit debe estar entre 1 y 100")
+    if offset < 0:
+        raise HTTPException(status_code=400, detail="offset debe ser >= 0")
+    total = count_user_csv_imports(user)
+    if response is not None:
+        response.headers["X-Total-Count"] = str(total)
     return list_user_csv_imports(user, limit=limit, offset=offset)
 
 
@@ -251,5 +260,7 @@ def imports_csv_detail(
     rows_limit: int = 200,
     user: UserOut = Depends(get_current_user),
 ):
+    if rows_limit < 1 or rows_limit > 1000:
+        raise HTTPException(status_code=400, detail="rows_limit debe estar entre 1 y 1000")
     return get_csv_batch_detail(batch_id, user, rows_limit=rows_limit)
 

@@ -161,16 +161,31 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
                 message="Este CSV ya fue importado anteriormente. Se devuelve el lote existente.",
             )
 
-        b_row = conn.execute(
-            text(
-                """
-                INSERT INTO csv_import_batches (user_id, source_filename, row_count, sha256)
-                VALUES (:uid, :fn, :rc, :sha)
-                RETURNING batch_id, source_filename, row_count, sha256, created_at
-                """
-            ),
-            {"uid": str(uid), "fn": fn, "rc": len(data_rows), "sha": sha},
-        ).mappings().fetchone()
+        try:
+            b_row = conn.execute(
+                text(
+                    """
+                    INSERT INTO csv_import_batches (user_id, source_filename, row_count, sha256)
+                    VALUES (:uid, :fn, :rc, :sha)
+                    RETURNING batch_id, source_filename, row_count, sha256, created_at
+                    """
+                ),
+                {"uid": str(uid), "fn": fn, "rc": len(data_rows), "sha": sha},
+            ).mappings().fetchone()
+        except IntegrityError:
+            # Carrera: otro request insertó el mismo sha256 entre el SELECT y el INSERT.
+            b_row = conn.execute(
+                text(
+                    """
+                    SELECT batch_id, source_filename, row_count, sha256, created_at
+                    FROM csv_import_batches
+                    WHERE user_id = :uid AND sha256 = :sha
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """
+                ),
+                {"uid": str(uid), "sha": sha},
+            ).mappings().fetchone()
         assert b_row is not None
         bid = str(b_row["batch_id"])
 
@@ -190,6 +205,22 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
         batch=item,
         message=f"Importadas {item.row_count} filas.",
     )
+
+
+def count_user_csv_imports(user: UserOut) -> int:
+    uid = str(uuid.UUID(user.user_id))
+    with engine().connect() as conn:
+        n = conn.execute(
+            text(
+                """
+                SELECT COUNT(*)::int AS n
+                FROM csv_import_batches
+                WHERE user_id = :uid
+                """
+            ),
+            {"uid": uid},
+        ).mappings().fetchone()
+    return int((n or {}).get("n") or 0)
 
 
 def list_user_csv_imports(

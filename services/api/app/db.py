@@ -155,4 +155,40 @@ def init_auth_schema() -> None:
         conn.execute(text("ALTER TABLE csv_import_rows ALTER COLUMN row_id SET DEFAULT gen_random_uuid();"))
         conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS csv_import_rows_batch_pos_uidx ON csv_import_rows(batch_id, position);"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS csv_import_rows_batch_pos_idx ON csv_import_rows(batch_id, position);"))
+        conn.execute(text("ALTER TABLE csv_import_batches ADD COLUMN IF NOT EXISTS quality_summary JSONB;"))
+        conn.execute(text("ALTER TABLE csv_import_batches ADD COLUMN IF NOT EXISTS ingest_status TEXT;"))
+
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS pipeline_events (
+                  event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  stage TEXT NOT NULL,
+                  status TEXT NOT NULL,
+                  message TEXT NOT NULL,
+                  study_id TEXT,
+                  payload_ref TEXT,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS data_quality_issues (
+                  issue_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  dataset TEXT NOT NULL,
+                  issue_type TEXT NOT NULL,
+                  severity TEXT NOT NULL,
+                  study_id TEXT,
+                  row_ref TEXT,
+                  details JSONB NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS data_quality_issues_dataset_idx ON data_quality_issues(dataset);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS pipeline_events_stage_idx ON pipeline_events(stage);"))
 

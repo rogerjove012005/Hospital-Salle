@@ -28,10 +28,16 @@ from .auth import (
 from .dashboard_imports import (
     CsvBatchDetail,
     CsvImportResult,
+    CsvPreviewResult,
+    DataQualityIssueOut,
+    PipelineEventOut,
     count_user_csv_imports,
     get_csv_batch_detail,
     import_csv_file,
+    list_batch_quality_issues,
+    list_csv_pipeline_events,
     list_user_csv_imports,
+    preview_csv_upload,
 )
 from .db import engine, init_auth_schema
 
@@ -218,11 +224,7 @@ def list_my_studies(user: UserOut = Depends(require_roles("paciente"))):
     return [dict(r) for r in rows]
 
 
-@app.post("/imports/csv", response_model=CsvImportResult)
-async def imports_csv(
-    file: UploadFile = File(...),
-    user: UserOut = Depends(get_current_user),
-):
+def _imports_csv_validate_upload(file: UploadFile) -> None:
     content_type = (file.content_type or "").lower().strip()
     allowed = {
         "text/csv",
@@ -234,7 +236,46 @@ async def imports_csv(
         raise HTTPException(status_code=415, detail="Tipo de fichero no soportado. Sube un CSV.")
     if file.filename and not file.filename.lower().endswith(".csv") and content_type not in {"text/plain"}:
         raise HTTPException(status_code=415, detail="Extensión no válida. Sube un fichero .csv.")
+
+
+@app.post("/imports/csv/preview", response_model=CsvPreviewResult)
+async def imports_csv_preview(
+    file: UploadFile = File(...),
+    preview_limit: int = 25,
+    _user: UserOut = Depends(get_current_user),
+):
+    """
+    Parsea CSV y calcula métricas de calidad sin escribir filas ni lotes en BD.
+    """
+    _imports_csv_validate_upload(file)
+    plim = preview_limit if 1 <= preview_limit <= 100 else 25
+    return await preview_csv_upload(file, preview_limit=plim)
+
+
+@app.post("/imports/csv", response_model=CsvImportResult)
+async def imports_csv(
+    file: UploadFile = File(...),
+    user: UserOut = Depends(get_current_user),
+):
+    _imports_csv_validate_upload(file)
     return await import_csv_file(file, user)
+
+
+@app.get("/imports/csv/{batch_id}/quality-issues", response_model=list[DataQualityIssueOut])
+def imports_csv_quality_issues(
+    batch_id: str,
+    limit: int = 100,
+    user: UserOut = Depends(get_current_user),
+):
+    return list_batch_quality_issues(batch_id, user, limit=limit)
+
+
+@app.get("/admin/imports/pipeline-events", response_model=list[PipelineEventOut])
+def admin_csv_pipeline_events(
+    limit: int = 50,
+    _admin: UserOut = Depends(require_roles("admin")),
+):
+    return list_csv_pipeline_events(limit=limit)
 
 
 @app.get("/imports/csv")

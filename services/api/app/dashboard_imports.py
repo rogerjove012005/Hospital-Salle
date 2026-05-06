@@ -10,6 +10,7 @@ from typing import Any, Mapping
 from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from .auth import UserOut
 from .db import engine
@@ -141,6 +142,25 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
 
     uid = uuid.UUID(user.user_id)
     with engine().begin() as conn:
+        existing = conn.execute(
+            text(
+                """
+                SELECT batch_id, source_filename, row_count, sha256, created_at
+                FROM csv_import_batches
+                WHERE user_id = :uid AND sha256 = :sha
+                ORDER BY created_at DESC
+                LIMIT 1
+                """
+            ),
+            {"uid": str(uid), "sha": sha},
+        ).mappings().fetchone()
+        if existing:
+            item = CsvBatchListItem.from_row(existing)
+            return CsvImportResult(
+                batch=item,
+                message="Este CSV ya fue importado anteriormente. Se devuelve el lote existente.",
+            )
+
         b_row = conn.execute(
             text(
                 """

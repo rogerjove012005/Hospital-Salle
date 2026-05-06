@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import io
 import json
 import re
@@ -27,6 +28,7 @@ class CsvBatchListItem(BaseModel):
     batch_id: str
     source_filename: str | None
     row_count: int
+    sha256: str | None = None
     created_at: datetime | None
 
     @classmethod
@@ -35,6 +37,7 @@ class CsvBatchListItem(BaseModel):
             batch_id=str(r["batch_id"]),
             source_filename=r.get("source_filename"),
             row_count=int(r.get("row_count") or 0),
+            sha256=r.get("sha256"),
             created_at=r.get("created_at"),
         )
 
@@ -43,6 +46,7 @@ class CsvBatchDetail(BaseModel):
     batch_id: str
     source_filename: str | None
     row_count: int
+    sha256: str | None = None
     created_at: datetime | None
     columns: list[str] = Field(default_factory=list)
     rows: list[CsvRowOut]
@@ -63,6 +67,7 @@ class CsvBatchDetail(BaseModel):
             batch_id=str(batch_row["batch_id"]),
             source_filename=batch_row.get("source_filename"),
             row_count=int(batch_row.get("row_count") or 0),
+            sha256=batch_row.get("sha256"),
             created_at=batch_row.get("created_at"),
             columns=columns,
             rows=rows,
@@ -80,6 +85,7 @@ def _parse_csv_text(raw: str) -> tuple[list[str], list[dict[str, str]]]:
     if not first_line.strip():
         raise HTTPException(status_code=400, detail="El fichero está vacío")
     stream.seek(0)
+
     reader = csv.DictReader(stream)
     if not reader.fieldnames:
         raise HTTPException(status_code=400, detail="No se pudo leer la cabecera del CSV (primera fila)")
@@ -116,6 +122,8 @@ def _parse_csv_text(raw: str) -> tuple[list[str], list[dict[str, str]]]:
 
 async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
     raw_b = await file.read()
+    if not raw_b:
+        raise HTTPException(status_code=400, detail="El fichero está vacío")
     if len(raw_b) > _MAX_CSV_BYTES:
         raise HTTPException(
             status_code=400,
@@ -129,18 +137,19 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
     _cols, data_rows = _parse_csv_text(textdata)
     fn = (file.filename or "importacion.csv")[:200]
     fn = _SAFE_FILENAME.sub("_", fn) or "importacion.csv"
+    sha = hashlib.sha256(raw_b).hexdigest()
 
     uid = uuid.UUID(user.user_id)
     with engine().begin() as conn:
         b_row = conn.execute(
             text(
                 """
-                INSERT INTO csv_import_batches (user_id, source_filename, row_count)
-                VALUES (:uid, :fn, :rc)
-                RETURNING batch_id, source_filename, row_count, created_at
+                INSERT INTO csv_import_batches (user_id, source_filename, row_count, sha256)
+                VALUES (:uid, :fn, :rc, :sha)
+                RETURNING batch_id, source_filename, row_count, sha256, created_at
                 """
             ),
-            {"uid": str(uid), "fn": fn, "rc": len(data_rows)},
+            {"uid": str(uid), "fn": fn, "rc": len(data_rows), "sha": sha},
         ).mappings().fetchone()
         assert b_row is not None
         bid = str(b_row["batch_id"])
@@ -153,22 +162,13 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
                     VALUES (CAST(:bid AS uuid), :pos, CAST(:fields AS jsonb))
                     """
                 ),
-                {
-                    "bid": bid,
-                    "pos": i,
-                    "fields": json.dumps(row, ensure_ascii=False),
-                },
+                {"bid": bid, "pos": i, "fields": json.dumps(row, ensure_ascii=False)},
             )
 
-    item = CsvBatchListItem(
-        batch_id=bid,
-        source_filename=b_row["source_filename"],
-        row_count=int(b_row["row_count"] or 0),
-        created_at=b_row.get("created_at"),
-    )
+    item = CsvBatchListItem.from_row(b_row)
     return CsvImportResult(
         batch=item,
-        message=f"Importadas {item.row_count} filas. Los datos se han guardado y aparecen en la tabla de abajo.",
+        message=f"Importadas {item.row_count} filas.",
     )
 
 
@@ -184,7 +184,7 @@ def list_user_csv_imports(
         rows = conn.execute(
             text(
                 """
-                SELECT batch_id, source_filename, row_count, created_at
+                SELECT batch_id, source_filename, row_count, sha256, created_at
                 FROM csv_import_batches
                 WHERE user_id = :uid
                 ORDER BY created_at DESC
@@ -200,17 +200,20 @@ def list_user_csv_imports(
 def get_csv_batch_detail(
     batch_id: str,
     user: UserOut,
+    rows_limit: int = 200,
 ) -> CsvBatchDetail:
     try:
         bid = str(uuid.UUID(batch_id))
     except ValueError as e:
         raise HTTPException(status_code=400, detail="ID de lote no válido") from e
+
+    lim = min(max(1, rows_limit), 1000)
     uid = str(uuid.UUID(user.user_id))
     with engine().connect() as conn:
         batch = conn.execute(
             text(
                 """
-                SELECT batch_id, source_filename, row_count, created_at
+                SELECT batch_id, source_filename, row_count, sha256, created_at
                 FROM csv_import_batches
                 WHERE batch_id = :bid AND user_id = :uid
                 """
@@ -227,9 +230,10 @@ def get_csv_batch_detail(
                 FROM csv_import_rows
                 WHERE batch_id = :bid
                 ORDER BY position
+                LIMIT :lim
                 """
             ),
-            {"bid": bid},
+            {"bid": bid, "lim": lim},
         ).mappings().all()
 
     columns: list[str] = []
@@ -239,8 +243,5 @@ def get_csv_batch_detail(
         for k in rowd:
             if k not in columns:
                 columns.append(k)
-    if not columns and frows:
-        d0 = frows[0]["fields"]
-        columns = list(dict(d0).keys()) if isinstance(d0, dict) else []
     return CsvBatchDetail.build(batch, frows, columns)
 

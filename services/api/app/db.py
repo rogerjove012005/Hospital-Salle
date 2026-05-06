@@ -23,6 +23,7 @@ def init_auth_schema() -> None:
     );
     """
     with engine().begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto;"))
         conn.execute(text(sql))
 
         conn.execute(
@@ -123,16 +124,35 @@ def init_auth_schema() -> None:
                   row_count INTEGER NOT NULL DEFAULT 0,
                   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
-                CREATE INDEX IF NOT EXISTS csv_import_batches_user_id_idx
-                  ON csv_import_batches(user_id);
-                CREATE TABLE IF NOT EXISTS csv_import_rows (
-                  batch_id UUID NOT NULL REFERENCES csv_import_batches(batch_id) ON DELETE CASCADE,
-                  position INTEGER NOT NULL,
-                  fields JSONB NOT NULL,
-                  PRIMARY KEY (batch_id, position)
-                );
-                CREATE INDEX IF NOT EXISTS csv_import_rows_batch_id_idx ON csv_import_rows(batch_id);
                 """
             )
         )
+        conn.execute(text("ALTER TABLE csv_import_batches ADD COLUMN IF NOT EXISTS sha256 TEXT;"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS csv_import_batches_user_id_idx ON csv_import_batches(user_id);"))
+        conn.execute(
+            text(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS csv_import_batches_user_sha256_uidx
+                  ON csv_import_batches(user_id, sha256)
+                  WHERE sha256 IS NOT NULL;
+                """
+            )
+        )
+
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS csv_import_rows (
+                  row_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  batch_id UUID NOT NULL REFERENCES csv_import_batches(batch_id) ON DELETE CASCADE,
+                  position INTEGER NOT NULL,
+                  fields JSONB NOT NULL
+                );
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE csv_import_rows ADD COLUMN IF NOT EXISTS row_id UUID;"))
+        conn.execute(text("ALTER TABLE csv_import_rows ALTER COLUMN row_id SET DEFAULT gen_random_uuid();"))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS csv_import_rows_batch_pos_uidx ON csv_import_rows(batch_id, position);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS csv_import_rows_batch_pos_idx ON csv_import_rows(batch_id, position);"))
 

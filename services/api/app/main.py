@@ -1,6 +1,6 @@
 import os
 
-from fastapi import Depends, FastAPI, File, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from minio import Minio
 from sqlalchemy import text
@@ -222,6 +222,17 @@ async def imports_csv(
     file: UploadFile = File(...),
     user: UserOut = Depends(get_current_user),
 ):
+    content_type = (file.content_type or "").lower().strip()
+    allowed = {
+        "text/csv",
+        "application/csv",
+        "application/vnd.ms-excel",
+        "text/plain",
+    }
+    if content_type and content_type not in allowed:
+        raise HTTPException(status_code=415, detail="Tipo de fichero no soportado. Sube un CSV.")
+    if file.filename and not file.filename.lower().endswith(".csv") and content_type not in {"text/plain"}:
+        raise HTTPException(status_code=415, detail="Extensión no válida. Sube un fichero .csv.")
     return await import_csv_file(file, user)
 
 
@@ -237,7 +248,8 @@ def imports_csv_list(
 @app.get("/imports/csv/{batch_id}", response_model=CsvBatchDetail)
 def imports_csv_detail(
     batch_id: str,
+    rows_limit: int = 200,
     user: UserOut = Depends(get_current_user),
 ):
-    return get_csv_batch_detail(batch_id, user)
+    return get_csv_batch_detail(batch_id, user, rows_limit=rows_limit)
 

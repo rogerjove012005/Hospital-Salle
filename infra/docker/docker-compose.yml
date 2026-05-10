@@ -55,6 +55,8 @@ services:
       MINIO_ENDPOINT: "http://minio:9000"
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_CSV_INGEST_BUCKET: ${MINIO_CSV_INGEST_BUCKET:-hospital-csv-ingest}
+      MINIO_CSV_INGEST_DISABLED: ${MINIO_CSV_INGEST_DISABLED:-0}
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-rogerjove012005@gmail.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-hospital}
@@ -117,6 +119,48 @@ services:
         condition: service_healthy
     ports:
       - "${FRONTEND_PORT:-3000}:80"
+    networks:
+      - hospital_net
+
+  # Feed CSV estático para simular sistema hospitalario externo (requerimiento ingesta / API simulada).
+  mock-hospital-feed:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ../../pipelines/ingestion/samples:/usr/share/nginx/html:ro
+    ports:
+      - "${MOCK_HOSPITAL_FEED_PORT:-8099}:80"
+    networks:
+      - hospital_net
+
+  # Vigilancia de carpeta + descarga periódica de URLs → POST /imports/csv (ingesta automatizada).
+  csv-ingest-worker:
+    build:
+      context: ../../pipelines/ingestion
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: http://api:8000
+      INGEST_LOGIN_EMAIL: ${ADMIN_EMAIL}
+      INGEST_LOGIN_PASSWORD: ${ADMIN_PASSWORD}
+      CSV_PULL_URLS: ${CSV_PULL_URLS:-http://mock-hospital-feed/export.csv}
+      INGEST_POLL_INTERVAL_SECONDS: ${INGEST_POLL_INTERVAL_SECONDS:-90}
+      INGEST_HTTP_TIMEOUT_SECONDS: ${INGEST_HTTP_TIMEOUT_SECONDS:-120}
+      CSV_INBOX: /data/inbox
+      CSV_PROCESSED: /data/processed
+      CSV_FAILED: /data/failed
+      CSV_INGEST_STATE: /data/state/ingest_state.json
+      LOG_LEVEL: ${INGEST_LOG_LEVEL:-INFO}
+    volumes:
+      - ./csv-ingest-mounts/inbox:/data/inbox
+      - ./csv-ingest-mounts/processed:/data/processed
+      - ./csv-ingest-mounts/failed:/data/failed
+      - ./csv-ingest-mounts/state:/data/state
+    depends_on:
+      api:
+        condition: service_healthy
+      mock-hospital-feed:
+        condition: service_started
     networks:
       - hospital_net
 

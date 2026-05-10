@@ -25,6 +25,10 @@ data/warehouse/
 data/models/
 *.parquet
 *.csv
+
+# Ejemplo CSV versionado para el feed HTTP simulado del pipeline de ingesta
+!pipelines/ingestion/samples/
+!pipelines/ingestion/samples/**
 *.json
 *.db
 *.sqlite

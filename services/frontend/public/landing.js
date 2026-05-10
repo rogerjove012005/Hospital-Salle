@@ -214,6 +214,10 @@ async function boot() {
       ? `Sesión activa · ${me.email}`
       : "Sesión activa.";
     applyRoleSpecifics(me);
+    const navCsv = document.getElementById("navCsvImport");
+    if (navCsv && (me.role === "admin" || me.role === "medico")) {
+      navCsv.hidden = false;
+    }
     setLoginMeta();
     mNextAppt.textContent = "—";
     mNextApptHint.textContent = "Sin citas programadas en este momento.";

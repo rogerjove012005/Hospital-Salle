@@ -1,6 +1,6 @@
 import os
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from minio import Minio
 from sqlalchemy import text
@@ -24,6 +24,22 @@ from .auth import (
     request_password_reset,
     reset_password,
     require_roles,
+)
+from .dashboard_imports import (
+    CsvBatchDetail,
+    CsvImportResult,
+    CsvPreviewResult,
+    DataQualityIssueOut,
+    PipelineEventOut,
+    count_user_csv_imports,
+    emit_csv_ingestion_failure,
+    export_user_csv_batch,
+    get_csv_batch_detail,
+    import_csv_file,
+    list_batch_quality_issues,
+    list_csv_pipeline_events,
+    list_user_csv_imports,
+    preview_csv_upload,
 )
 from .db import engine, init_auth_schema
 
@@ -208,4 +224,108 @@ def list_my_studies(user: UserOut = Depends(require_roles("paciente"))):
             {"pid": user.patient_id},
         ).mappings().all()
     return [dict(r) for r in rows]
+
+
+def _imports_csv_validate_upload(file: UploadFile) -> None:
+    content_type = (file.content_type or "").lower().strip()
+    allowed = {
+        "text/csv",
+        "application/csv",
+        "application/vnd.ms-excel",
+        "text/plain",
+    }
+    if content_type and content_type not in allowed:
+        raise HTTPException(status_code=415, detail="Tipo de fichero no soportado. Sube un CSV.")
+    if file.filename and not file.filename.lower().endswith(".csv") and content_type not in {"text/plain"}:
+        raise HTTPException(status_code=415, detail="Extensión no válida. Sube un fichero .csv.")
+
+
+@app.post("/imports/csv/preview", response_model=CsvPreviewResult)
+async def imports_csv_preview(
+    file: UploadFile = File(...),
+    preview_limit: int = 25,
+    _user: UserOut = Depends(get_current_user),
+):
+    """
+    Parsea CSV y calcula métricas de calidad sin escribir filas ni lotes en BD.
+    """
+    _imports_csv_validate_upload(file)
+    plim = preview_limit if 1 <= preview_limit <= 100 else 25
+    return await preview_csv_upload(file, preview_limit=plim)
+
+
+@app.post("/imports/csv", response_model=CsvImportResult)
+async def imports_csv(
+    file: UploadFile = File(...),
+    user: UserOut = Depends(get_current_user),
+):
+    _imports_csv_validate_upload(file)
+    try:
+        return await import_csv_file(file, user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        emit_csv_ingestion_failure("Fallo inesperado en importación CSV", e)
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo completar la ingesta. Inténtalo de nuevo o contacta soporte.",
+        ) from e
+
+
+@app.get("/imports/csv/{batch_id}/quality-issues", response_model=list[DataQualityIssueOut])
+def imports_csv_quality_issues(
+    batch_id: str,
+    limit: int = 100,
+    user: UserOut = Depends(get_current_user),
+):
+    return list_batch_quality_issues(batch_id, user, limit=limit)
+
+
+@app.get("/admin/imports/pipeline-events", response_model=list[PipelineEventOut])
+def admin_csv_pipeline_events(
+    limit: int = 50,
+    _admin: UserOut = Depends(require_roles("admin")),
+):
+    return list_csv_pipeline_events(limit=limit)
+
+
+@app.get("/imports/csv")
+def imports_csv_list(
+    limit: int = 20,
+    offset: int = 0,
+    user: UserOut = Depends(get_current_user),
+    response: Response = None,
+):
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="limit debe estar entre 1 y 100")
+    if offset < 0:
+        raise HTTPException(status_code=400, detail="offset debe ser >= 0")
+    total = count_user_csv_imports(user)
+    if response is not None:
+        response.headers["X-Total-Count"] = str(total)
+    return list_user_csv_imports(user, limit=limit, offset=offset)
+
+
+@app.get("/imports/csv/{batch_id}/export")
+def imports_csv_export(batch_id: str, user: UserOut = Depends(get_current_user)):
+    """Descarga el lote como CSV regenerado desde las filas persistidas (UTF-8 con BOM)."""
+    body, filename = export_user_csv_batch(batch_id, user)
+    return Response(
+        content=body,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
+
+
+@app.get("/imports/csv/{batch_id}", response_model=CsvBatchDetail)
+def imports_csv_detail(
+    batch_id: str,
+    rows_limit: int = 200,
+    user: UserOut = Depends(get_current_user),
+):
+    if rows_limit < 1 or rows_limit > 1000:
+        raise HTTPException(status_code=400, detail="rows_limit debe estar entre 1 y 1000")
+    return get_csv_batch_detail(batch_id, user, rows_limit=rows_limit)
 

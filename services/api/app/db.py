@@ -23,6 +23,7 @@ def init_auth_schema() -> None:
     );
     """
     with engine().begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto;"))
         conn.execute(text(sql))
 
         conn.execute(
@@ -112,4 +113,82 @@ def init_auth_schema() -> None:
 
         conn.execute(text("CREATE SEQUENCE IF NOT EXISTS patient_id_seq;"))
         conn.execute(text("CREATE SEQUENCE IF NOT EXISTS medico_id_seq;"))
+
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS csv_import_batches (
+                  batch_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  user_id UUID NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
+                  source_filename TEXT,
+                  row_count INTEGER NOT NULL DEFAULT 0,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE csv_import_batches ADD COLUMN IF NOT EXISTS sha256 TEXT;"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS csv_import_batches_user_id_idx ON csv_import_batches(user_id);"))
+        conn.execute(
+            text(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS csv_import_batches_user_sha256_uidx
+                  ON csv_import_batches(user_id, sha256)
+                  WHERE sha256 IS NOT NULL;
+                """
+            )
+        )
+
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS csv_import_rows (
+                  row_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  batch_id UUID NOT NULL REFERENCES csv_import_batches(batch_id) ON DELETE CASCADE,
+                  position INTEGER NOT NULL,
+                  fields JSONB NOT NULL
+                );
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE csv_import_rows ADD COLUMN IF NOT EXISTS row_id UUID;"))
+        conn.execute(text("ALTER TABLE csv_import_rows ALTER COLUMN row_id SET DEFAULT gen_random_uuid();"))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS csv_import_rows_batch_pos_uidx ON csv_import_rows(batch_id, position);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS csv_import_rows_batch_pos_idx ON csv_import_rows(batch_id, position);"))
+        conn.execute(text("ALTER TABLE csv_import_batches ADD COLUMN IF NOT EXISTS quality_summary JSONB;"))
+        conn.execute(text("ALTER TABLE csv_import_batches ADD COLUMN IF NOT EXISTS ingest_status TEXT;"))
+
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS pipeline_events (
+                  event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  stage TEXT NOT NULL,
+                  status TEXT NOT NULL,
+                  message TEXT NOT NULL,
+                  study_id TEXT,
+                  payload_ref TEXT,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS data_quality_issues (
+                  issue_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  dataset TEXT NOT NULL,
+                  issue_type TEXT NOT NULL,
+                  severity TEXT NOT NULL,
+                  study_id TEXT,
+                  row_ref TEXT,
+                  details JSONB NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS data_quality_issues_dataset_idx ON data_quality_issues(dataset);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS pipeline_events_stage_idx ON pipeline_events(stage);"))
 

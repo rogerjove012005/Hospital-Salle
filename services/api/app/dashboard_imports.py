@@ -274,6 +274,24 @@ def _emit_pipeline_event(
     )
 
 
+def emit_csv_ingestion_failure(message: str, exc: BaseException | None = None) -> None:
+    """Registra error de ingesta cuando la petición falla fuera del flujo HTTP 4xx habitual."""
+    body = message[:1400]
+    if exc is not None:
+        body = f"{body} | {type(exc).__name__}: {str(exc)[:380]}"
+    try:
+        with engine().begin() as conn:
+            _emit_pipeline_event(
+                conn,
+                stage="csv_ingestion",
+                status="error",
+                message=body,
+                payload_ref=None,
+            )
+    except Exception:
+        _log.exception("csv_ingestion_failure_event_skipped")
+
+
 def _emit_data_quality_issues(
     conn,
     *,

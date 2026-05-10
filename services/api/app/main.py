@@ -32,6 +32,7 @@ from .dashboard_imports import (
     DataQualityIssueOut,
     PipelineEventOut,
     count_user_csv_imports,
+    emit_csv_ingestion_failure,
     get_csv_batch_detail,
     import_csv_file,
     list_batch_quality_issues,
@@ -258,7 +259,16 @@ async def imports_csv(
     user: UserOut = Depends(get_current_user),
 ):
     _imports_csv_validate_upload(file)
-    return await import_csv_file(file, user)
+    try:
+        return await import_csv_file(file, user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        emit_csv_ingestion_failure("Fallo inesperado en importación CSV", e)
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo completar la ingesta. Inténtalo de nuevo o contacta soporte.",
+        ) from e
 
 
 @app.get("/imports/csv/{batch_id}/quality-issues", response_model=list[DataQualityIssueOut])

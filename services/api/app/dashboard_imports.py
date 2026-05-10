@@ -2,6 +2,8 @@ import csv
 import hashlib
 import io
 import json
+import logging
+import os
 import re
 import uuid
 from datetime import datetime
@@ -14,6 +16,8 @@ from sqlalchemy.exc import IntegrityError
 
 from .auth import UserOut
 from .db import engine
+
+_log = logging.getLogger(__name__)
 
 _MAX_CSV_BYTES = 2 * 1024 * 1024
 _MAX_ROWS = 2000
@@ -204,6 +208,51 @@ def analyze_csv_quality(columns: list[str], data_rows: list[dict[str, str]]) -> 
         duplicate_positions_sample=sorted(set(dup_sample))[:40],
         alerts=alerts,
     )
+
+
+def _maybe_archive_csv_raw(*, batch_id: str, filename: str, raw_bytes: bytes) -> None:
+    """
+    Copia opcional del CSV crudo en MinIO (tracabilidad objeto + PostgreSQL).
+    Desactivado si MINIO_CSV_INGEST_DISABLED=1 o falta configuración MinIO en env.
+    """
+    if os.getenv("MINIO_CSV_INGEST_DISABLED", "").strip().lower() in {"1", "true", "yes"}:
+        return
+    endpoint = os.getenv("MINIO_ENDPOINT")
+    ak = os.getenv("MINIO_ACCESS_KEY")
+    sk = os.getenv("MINIO_SECRET_KEY")
+    if not endpoint or ak is None or sk is None:
+        return
+    try:
+        from minio import Minio
+        from minio.error import S3Error
+    except ImportError:
+        return
+
+    host = endpoint.replace("http://", "").replace("https://", "")
+    secure = endpoint.startswith("https://")
+    bucket = os.getenv("MINIO_CSV_INGEST_BUCKET", "hospital-csv-ingest")
+    client = Minio(host, access_key=ak, secret_key=sk, secure=secure)
+    try:
+        if not client.bucket_exists(bucket):
+            client.make_bucket(bucket)
+    except S3Error as e:
+        _log.warning("minio bucket csv ingest: %s", e)
+        return
+
+    fn = os.path.basename(_SAFE_FILENAME.sub("_", filename) or "import.csv")[:220]
+    key = f"ingest/{batch_id}/{fn}"
+    bio = io.BytesIO(raw_bytes)
+    try:
+        client.put_object(
+            bucket,
+            key,
+            bio,
+            length=len(raw_bytes),
+            content_type="text/csv; charset=utf-8",
+            metadata={"sha256": hashlib.sha256(raw_bytes).hexdigest()},
+        )
+    except S3Error as e:
+        _log.warning("minio put csv failed: %s", e)
 
 
 def _emit_pipeline_event(
@@ -414,6 +463,7 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
 
         ingest_status = "completed_with_warnings" if quality.alerts else "completed"
 
+        owns_new_rows = False
         try:
             b_row = conn.execute(
                 text(
@@ -433,6 +483,7 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
                     "istatus": ingest_status,
                 },
             ).mappings().fetchone()
+            owns_new_rows = True
         except IntegrityError:
             b_row = conn.execute(
                 text(
@@ -447,38 +498,53 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
                 ),
                 {"uid": str(uid), "sha": sha},
             ).mappings().fetchone()
+            owns_new_rows = False
         assert b_row is not None
         bid = str(b_row["batch_id"])
 
-        for i, row in enumerate(data_rows, start=1):
-            conn.execute(
-                text(
-                    """
-                    INSERT INTO csv_import_rows (batch_id, position, fields)
-                    VALUES (CAST(:bid AS uuid), :pos, CAST(:fields AS jsonb))
-                    """
-                ),
-                {"bid": bid, "pos": i, "fields": json.dumps(row, ensure_ascii=False)},
+        if owns_new_rows:
+            for i, row in enumerate(data_rows, start=1):
+                conn.execute(
+                    text(
+                        """
+                        INSERT INTO csv_import_rows (batch_id, position, fields)
+                        VALUES (CAST(:bid AS uuid), :pos, CAST(:fields AS jsonb))
+                        """
+                    ),
+                    {"bid": bid, "pos": i, "fields": json.dumps(row, ensure_ascii=False)},
+                )
+
+            _emit_pipeline_event(
+                conn,
+                stage="csv_ingestion",
+                status="ok" if ingest_status == "completed" else ingest_status,
+                message=f"Lote CSV importado: {len(data_rows)} filas, archivo {fn}",
+                payload_ref=bid,
             )
 
-        _emit_pipeline_event(
-            conn,
-            stage="csv_ingestion",
-            status="ok" if ingest_status == "completed" else ingest_status,
-            message=f"Lote CSV importado: {len(data_rows)} filas, archivo {fn}",
-            payload_ref=bid,
-        )
+            dup_only = {k: v for k, v in fp_dup.items() if len(v) > 1}
+            if dup_only or quality.empty_columns:
+                _emit_data_quality_issues(conn, batch_id=bid, quality=quality, fp_map_duplicate_positions=dup_only)
 
-        dup_only = {k: v for k, v in fp_dup.items() if len(v) > 1}
-        if dup_only or quality.empty_columns:
-            _emit_data_quality_issues(conn, batch_id=bid, quality=quality, fp_map_duplicate_positions=dup_only)
+    if owns_new_rows:
+        try:
+            _maybe_archive_csv_raw(batch_id=bid, filename=file.filename or fn, raw_bytes=raw_b)
+        except Exception as e:
+            _log.warning("csv minio archive non-fatal: %s", e)
+        item = CsvBatchListItem.from_row(b_row)
+        return CsvImportResult(
+            batch=item,
+            message=f"Importadas {item.row_count} filas.",
+            quality_summary=quality,
+            duplicate_file=False,
+        )
 
     item = CsvBatchListItem.from_row(b_row)
     return CsvImportResult(
         batch=item,
-        message=f"Importadas {item.row_count} filas.",
-        quality_summary=quality,
-        duplicate_file=False,
+        message="Este CSV ya fue importado (condición concurrente detectada); se devuelve el lote existente.",
+        quality_summary=item.quality_summary or quality,
+        duplicate_file=True,
     )
 
 

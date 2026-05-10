@@ -55,6 +55,8 @@ services:
       MINIO_ENDPOINT: "http://minio:9000"
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_CSV_INGEST_BUCKET: ${MINIO_CSV_INGEST_BUCKET:-hospital-csv-ingest}
+      MINIO_CSV_INGEST_DISABLED: ${MINIO_CSV_INGEST_DISABLED:-0}
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-rogerjove012005@gmail.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-hospital}

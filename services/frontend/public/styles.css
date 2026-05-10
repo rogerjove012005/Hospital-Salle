@@ -2004,3 +2004,60 @@ code {
   color: var(--text-muted);
   line-height: 1.4;
 }
+
+/* ——— Página ingesta CSV (/imports.html) ——— */
+.imports-pre {
+  margin: var(--space-5) 0 0;
+  padding: var(--space-4);
+  background: var(--page-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.imports-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.imports-table th,
+.imports-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.imports-table th {
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.imports-linkbtn {
+  border: none;
+  background: transparent;
+  color: var(--brand-dark);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.imports-linkbtn:hover {
+  color: var(--brand-darker);
+}
+
+@media (max-width: 900px) {
+  #importsTop .dash-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ingesta CSV — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260506a" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="dash-body">
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a href="/landing.html" class="site-logo" aria-label="Volver al panel">
+          <span class="site-logo__text">
+            <span class="site-logo__title">laSalle Health Center</span>
+            <span class="site-logo__subtitle">Ingesta hospitalaria · CSV</span>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="Navegación">
+          <a href="/landing.html">Panel</a>
+          <a href="#importsTop" aria-current="page">Operaciones CSV</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dash" id="importsTop">
+      <section class="dash-hero" style="margin-bottom: var(--space-7)">
+        <div class="dash-hero__top">
+          <p class="dash-hero__eyebrow">Ingesta datos</p>
+          <button id="btnLogout" class="dash-hero__logout" type="button">Cerrar sesión</button>
+        </div>
+        <div class="dash-hero__main">
+          <div class="dash-hero__intro" style="max-width: none">
+            <h1 class="dash-hero__title">Importación de ficheros CSV</h1>
+            <p class="dash-hero__sub" id="importsSub">
+              Vista previa, importación persistente en PostgreSQL, resumen de calidad y auditoría técnica
+              (<code>/imports/csv*</code>). Los datos tratados cumplen función de proyecto académico; no despliegan un registro
+              clínico real.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div class="dash-grid" style="grid-template-columns: 1fr 1fr; align-items: start">
+        <article class="dash-card" id="cardPreview">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">1. Vista previa (sin guardar)</h2>
+            <p class="dash-card__sub">Llama a <code>POST /imports/csv/preview</code> y muestra calidad automática.</p>
+          </header>
+          <div class="auth-form__field" style="margin-bottom: var(--space-4)">
+            <label class="auth-label" for="filePreview">Fichero CSV</label>
+            <input type="file" id="filePreview" accept=".csv,text/csv" class="auth-input" />
+          </div>
+          <button type="button" class="auth-submit" id="btnPreview">Generar vista previa</button>
+          <pre id="previewOut" class="imports-pre" hidden></pre>
+        </article>
+
+        <article class="dash-card" id="cardImport">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">2. Importar a base de datos</h2>
+            <p class="dash-card__sub">Llama a <code>POST /imports/csv</code> (deduplicación por hash si ya existía).</p>
+          </header>
+          <div class="auth-form__field" style="margin-bottom: var(--space-4)">
+            <label class="auth-label" for="fileImport">Fichero CSV</label>
+            <input type="file" id="fileImport" accept=".csv,text/csv" class="auth-input" />
+          </div>
+          <button type="button" class="auth-submit" id="btnImport">Importar lote</button>
+          <pre id="importOut" class="imports-pre" hidden></pre>
+        </article>
+      </div>
+
+      <article class="dash-card" style="margin-top: var(--space-7)">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">3. Lotes recientes</h2>
+          <p class="dash-card__sub">
+            <code>GET /imports/csv</code> · Total: <strong id="batchTotal">—</strong>
+            <button type="button" class="dash-hero__logout" id="btnRefresh" style="margin-left: 12px">Actualizar</button>
+          </p>
+        </header>
+        <div style="overflow-x: auto">
+          <table class="imports-table" id="batchTable" aria-label="Lotes importados">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Fichero</th>
+                <th>Filas</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="batchTbody"></tbody>
+          </table>
+        </div>
+        <p id="batchEmpty" class="dash-card__sub" hidden>Sin lotes todavía. Importe un CSV o genere uno de prueba.</p>
+      </article>
+
+      <article class="dash-card" style="margin-top: var(--space-6)">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">4. Detalle del lote</h2>
+          <p class="dash-card__sub">
+            <code>GET /imports/csv/{batch_id}</code> y
+            <code>GET /imports/csv/{batch_id}/quality-issues</code>
+          </p>
+        </header>
+        <pre id="detailOut" class="imports-pre">Seleccione un lote en la tabla.</pre>
+      </article>
+
+      <div class="status" aria-live="polite" style="margin-top: var(--space-6)">
+        <div id="status" class="statusText"></div>
+      </div>
+    </main>
+
+    <footer class="site-footer site-footer--rich" role="contentinfo">
+      <div class="site-footer__shell site-footer__shell--simple">
+        <div class="site-footer__meta site-footer__meta--rich">
+          <p>© 2026 laSalle Health Center · Ingesta simulada para proyecto académico.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/imports.js"></script>
+  </body>
+</html>

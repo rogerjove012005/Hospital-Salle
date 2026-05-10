@@ -21,6 +21,7 @@ _log = logging.getLogger(__name__)
 
 _MAX_CSV_BYTES = 2 * 1024 * 1024
 _MAX_ROWS = 2000
+_MAX_EXPORT_ROWS = 10000
 _MAX_PREVIEW_ROWS = 25
 _MAX_DQ_ISSUES_PER_IMPORT = 80
 _SAFE_FILENAME = re.compile(r"[^A-Za-z0-9._-]+")
@@ -656,6 +657,87 @@ def get_csv_batch_detail(
             if k not in columns:
                 columns.append(k)
     return CsvBatchDetail.build(batch, frows, columns)
+
+
+def _export_filename_for_batch(batch_row: Mapping[str, Any], batch_id: str) -> str:
+    fn = batch_row.get("source_filename")
+    base = os.path.basename(str(fn or "")).strip()
+    base = _SAFE_FILENAME.sub("_", base) or ""
+    if base.lower().endswith(".csv"):
+        out = base
+    elif base:
+        out = f"{base}.csv"
+    else:
+        out = f"export-{batch_id[:8]}.csv"
+    return out[:200]
+
+
+def export_user_csv_batch(batch_id: str, user: UserOut) -> tuple[bytes, str]:
+    """Reconstruye un CSV UTF-8 (BOM) desde filas almacenadas; solo el propietario del lote."""
+    try:
+        bid = str(uuid.UUID(batch_id))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail="ID de lote no válido") from e
+
+    uid = str(uuid.UUID(user.user_id))
+    with engine().connect() as conn:
+        batch = conn.execute(
+            text(
+                """
+                SELECT batch_id, source_filename, row_count
+                FROM csv_import_batches
+                WHERE batch_id = :bid AND user_id = :uid
+                """
+            ),
+            {"bid": bid, "uid": uid},
+        ).mappings().fetchone()
+        if not batch:
+            raise HTTPException(status_code=404, detail="Lote no encontrado")
+
+        rc = int(batch.get("row_count") or 0)
+        if rc > _MAX_EXPORT_ROWS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Este lote declara {rc} filas; el export admite como máximo {_MAX_EXPORT_ROWS}.",
+            )
+
+        frows = conn.execute(
+            text(
+                """
+                SELECT position, fields
+                FROM csv_import_rows
+                WHERE batch_id = :bid
+                ORDER BY position
+                """
+            ),
+            {"bid": bid},
+        ).mappings().all()
+
+    if len(frows) > _MAX_EXPORT_ROWS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El lote tiene demasiadas filas almacenadas para un único export (>{_MAX_EXPORT_ROWS}).",
+        )
+
+    columns: list[str] = []
+    for fr in frows:
+        d = fr["fields"]
+        rowd = dict(d) if isinstance(d, dict) else {}
+        for k in rowd:
+            if k not in columns:
+                columns.append(k)
+
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    if columns:
+        w.writerow(columns)
+    for fr in frows:
+        d = fr["fields"]
+        rowd = dict(d) if isinstance(d, dict) else {}
+        w.writerow([rowd.get(c, "") for c in columns])
+
+    raw = buf.getvalue().encode("utf-8-sig")
+    return raw, _export_filename_for_batch(batch, bid)
 
 
 def list_batch_quality_issues(batch_id: str, user: UserOut, limit: int = 100) -> list[DataQualityIssueOut]:

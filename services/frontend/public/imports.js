@@ -106,6 +106,31 @@ async function doImport() {
   await loadBatches();
 }
 
+async function downloadBatchCsv(batchId) {
+  const token = getToken();
+  const url = `${API_BASE}/imports/csv/${batchId}/export`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`HTTP ${res.status}: ${t}`);
+  }
+  const blob = await res.blob();
+  let name = `lote-${batchId.slice(0, 8)}.csv`;
+  const cd = res.headers.get("Content-Disposition");
+  if (cd) {
+    const m = /filename="([^"]+)"/i.exec(cd);
+    if (m) name = m[1];
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(a.href);
+  a.remove();
+}
+
 async function loadBatches() {
   const token = getToken();
   const url = `${API_BASE}/imports/csv?limit=50&offset=0`;
@@ -130,12 +155,22 @@ async function loadBatches() {
       <td>${escapeHtml(b.source_filename || "—")}</td>
       <td>${b.row_count}</td>
       <td>${escapeHtml(b.ingest_status || "—")}</td>
-      <td><button type="button" class="imports-linkbtn" data-bid="${escapeHtml(b.batch_id)}">Ver</button></td>
+      <td>
+        <button type="button" class="imports-linkbtn" data-bid="${escapeHtml(b.batch_id)}">Ver</button>
+        <button type="button" class="imports-linkbtn imports-linkbtn--secondary" data-dl="${escapeHtml(b.batch_id)}">CSV</button>
+      </td>
     `;
     tbody.appendChild(tr);
   }
   tbody.querySelectorAll("[data-bid]").forEach((btn) => {
     btn.addEventListener("click", () => loadDetail(btn.getAttribute("data-bid")));
+  });
+  tbody.querySelectorAll("[data-dl]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      downloadBatchCsv(btn.getAttribute("data-dl")).catch((e) =>
+        setStatus(String(e.message || e), "error"),
+      );
+    });
   });
 }
 

@@ -20,6 +20,10 @@ Tras un import **nuevo** correcto, la API puede guardar una copia del CSV en el 
 - **`GET /imports/csv/{batch_id}/quality-issues`** — Incidencias asociadas al lote.
 - **`GET /admin/imports/pipeline-events`** — Eventos recientes (rol admin); incluye `status=error` si la ingesta falla con excepción interna en `POST /imports/csv`.
 
+## Exportación reconstruida
+
+`GET /imports/csv/{batch_id}/export` devuelve un fichero CSV (UTF‑8 con BOM) generado desde `csv_import_rows`, con el mismo criterio de columnas que el detalle (orden de primera aparición). Límite de filas configurado en la API (`_MAX_EXPORT_ROWS`).
+
 ## Automatización local
 
 Script en `tools/ingest_csv_folder.sh`: recorre `*.csv` en un directorio y llama a la API con `JWT_TOKEN` en el entorno.

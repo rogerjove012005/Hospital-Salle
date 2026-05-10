@@ -33,6 +33,7 @@ from .dashboard_imports import (
     PipelineEventOut,
     count_user_csv_imports,
     emit_csv_ingestion_failure,
+    export_user_csv_batch,
     get_csv_batch_detail,
     import_csv_file,
     list_batch_quality_issues,
@@ -303,6 +304,19 @@ def imports_csv_list(
     if response is not None:
         response.headers["X-Total-Count"] = str(total)
     return list_user_csv_imports(user, limit=limit, offset=offset)
+
+
+@app.get("/imports/csv/{batch_id}/export")
+def imports_csv_export(batch_id: str, user: UserOut = Depends(get_current_user)):
+    """Descarga el lote como CSV regenerado desde las filas persistidas (UTF-8 con BOM)."""
+    body, filename = export_user_csv_batch(batch_id, user)
+    return Response(
+        content=body,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
 
 
 @app.get("/imports/csv/{batch_id}", response_model=CsvBatchDetail)

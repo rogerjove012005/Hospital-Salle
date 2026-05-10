@@ -2056,6 +2056,12 @@ code {
   color: var(--brand-darker);
 }
 
+.imports-linkbtn--secondary {
+  margin-left: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
 @media (max-width: 900px) {
   #importsTop .dash-grid {
     grid-template-columns: 1fr !important;

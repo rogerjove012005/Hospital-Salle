@@ -83,23 +83,43 @@ python3 scripts/xlsx_to_csv.py hospital_dataset.xlsx data/raw/hospital_dataset.c
 
 Requisitos: `pip install pandas openpyxl`.
 
-## Ejecución (placeholder)
-
-Cuando añadáis los contenedores, la idea es poder levantarlo con un comando:
+## Ejecución (`docker compose`)
 
 ```bash
 cd infra/docker
 docker compose --env-file .env.example up --build
 ```
 
+Servicios principales incluidos en Compose:
+
+| Servicio | Función breve |
+|----------|----------------|
+| postgres / minio / mailpit | Persistencia relacional + objetos + correo dev |
+| api | REST (auth, `/imports/csv*`, otros) |
+| frontend | Portal nginx + SPA estática (`/imports.html`) |
+| **mock-hospital-feed** | nginx que sirve un CSV ejemplo (simula API/sistema legacy) |
+| **csv-ingest-worker** | Ingesta **automatizada**: descarga esa URL (+ otras en `CSV_PULL_URLS`) y vigila `./csv-ingest-mounts/inbox/*.csv`; mueve resultado a `processed/` o `failed/` |
+
+Para probar sólo vigilancia carpeta sin feed HTTP:
+
+```bash
+CSV_PULL_URLS= docker compose --env-file .env.example up -d csv-ingest-worker
+```
+
+(SD completa del worker: [`docs/specs/automated-csv-ingestion.md`](docs/specs/automated-csv-ingestion.md).)
+
+Otros siguen planificados o parciales (ejemplo):
+
+- procesamiento distribuido (Spark/Dask) en `pipelines/processing/` — requisito académico aparte.
+
 Colocad el `docker-compose.yml` y los Dockerfiles en `infra/docker/` y documentad aquí:
 
-- Servicios esperados (ejemplo):
-  - base de datos estructurada (p. ej. PostgreSQL)
-  - almacenamiento objetos (p. ej. MinIO/S3) para imágenes
-  - procesamiento (Spark/Dask)
-  - API (FastAPI/Flask)
-  - dashboard (Streamlit/Grafana/etc.)
+- Servicios esperados (ejemplo histórico):
+  - base de datos estructurada (PostgreSQL ✓)
+  - almacenamiento objetos (MinIO ✓)
+  - procesamiento (Spark/Dask) — pendiente de implementar pipeline académico
+  - API (FastAPI ✓)
+  - dashboard frontend estático ✓
 
 ## Notas
 

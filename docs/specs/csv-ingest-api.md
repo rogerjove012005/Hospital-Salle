@@ -26,4 +26,5 @@ Tras un import **nuevo** correcto, la API puede guardar una copia del CSV en el 
 
 ## Automatización local
 
-Script en `tools/ingest_csv_folder.sh`: recorre `*.csv` en un directorio y llama a la API con `JWT_TOKEN` en el entorno.
+- Script puntual `tools/ingest_csv_folder.sh`: recorre `*.csv` en un directorio y llama a la API con `JWT_TOKEN` en el entorno.
+- Daemon en Docker: ver SDD **`docs/specs/automated-csv-ingestion.md`** (Compose: `csv-ingest-worker` + feed simulado `mock-hospital-feed`).

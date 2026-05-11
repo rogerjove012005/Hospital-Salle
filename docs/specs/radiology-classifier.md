@@ -76,3 +76,10 @@ El resultado es **probabilístico** y lleva **disclaimer** explícito: no consti
 | `ml/radiology-classifier/scripts/bootstrap_model.py` | Pipeline offline completo |
 | `services/api/app/radiology.py` | Router FastAPI |
 | `services/frontend/public/radiology.html` | UI |
+
+## 9. Documentación relacionada
+
+- **Decisión de modelo (baseline vs CNN):** [`docs/adr/0003-radiology-sklearn-baseline.md`](../adr/0003-radiology-sklearn-baseline.md)
+- **Ética y privacidad:** [`docs/ethics/radiology-ia-etica.md`](../ethics/radiology-ia-etica.md)
+- **Integración con estudios / MinIO:** [`docs/architecture/radiology-integration.md`](../architecture/radiology-integration.md)
+- **Diario IA (obligatorio):** [`docs/ai-dev-diary/2026-05-radiografia-ia.md`](../ai-dev-diary/2026-05-radiografia-ia.md)

@@ -25,6 +25,7 @@ from .auth import (
     reset_password,
     require_roles,
 )
+from .csv_aggregates_stats import CsvSparkAggregatesOut, get_csv_spark_aggregates
 from .dashboard_imports import (
     CsvBatchDetail,
     CsvImportResult,
@@ -76,6 +77,16 @@ def _minio_client() -> Minio:
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/stats/csv-aggregates", response_model=CsvSparkAggregatesOut)
+def stats_csv_aggregates(top: int = 15, user: UserOut = Depends(get_current_user)):
+    """
+    Métricas del último job PySpark sobre datos CSV ingestados (ver tablas csv_spark_*).
+    """
+    if top < 1 or top > 100:
+        raise HTTPException(status_code=400, detail="top debe estar entre 1 y 100")
+    return get_csv_spark_aggregates(user, top=top)
 
 
 @app.get("/health/deps")

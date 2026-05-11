@@ -24,6 +24,7 @@ data/processed/
 data/warehouse/
 data/models/
 *.parquet
+infra/docker/spark-processed-output/
 *.csv
 
 # Ejemplo CSV versionado para el feed HTTP simulado del pipeline de ingesta
@@ -34,6 +35,10 @@ data/models/
 *.sqlite
 *.sqlite3
 *.xlsx
+
+# Radiología sintética local (se regenera con scripts o en build Docker)
+ml/radiology-classifier/data/synthetic/
+ml/radiology-classifier/models/
 
 # Model artifacts
 *.pt

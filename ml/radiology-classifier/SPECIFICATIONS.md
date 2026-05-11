@@ -97,9 +97,9 @@ Output: [P(COVID), P(Neumonía), P(Normal)]
 ### Class Weights
 ```python
 {
-    'COVID-19': 1.5,    # Más importante detectar
-    'NEUMANIA': 1.0,
-    'NORMAL': 1.0
+    'SANA': 1.0,
+    'NEUMONIA': 1.2,
+    'COVID-19': 1.6,  # Mayor peso (contagioso): sample_weight en sklearn
 }
 ```
 

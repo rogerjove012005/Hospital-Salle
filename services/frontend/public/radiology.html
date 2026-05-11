@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radiología asistida — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260511b" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="dash-body">
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a href="/landing.html" class="site-logo" aria-label="Volver al panel">
+          <span class="site-logo__text">
+            <span class="site-logo__title">laSalle Health Center</span>
+            <span class="site-logo__subtitle">Clasificación radiográfica (proyecto académico)</span>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="Navegación">
+          <a href="/landing.html">Panel</a>
+          <a href="#rxTop" aria-current="page">Radiología</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dash" id="rxTop">
+      <section class="dash-hero" style="margin-bottom: var(--space-7)">
+        <div class="dash-hero__top">
+          <p class="dash-hero__eyebrow">IA de apoyo</p>
+          <button id="btnLogout" class="dash-hero__logout" type="button">Cerrar sesión</button>
+        </div>
+        <div class="dash-hero__main">
+          <div class="dash-hero__intro" style="max-width: none">
+            <h1 class="dash-hero__title">Clasificación de radiografías de tórax</h1>
+            <p class="dash-hero__sub" id="rxSub">
+              Triple clase: Sana · Neumonía · COVID-19. Resultado meramente demostrativo; no es diagnóstico.
+            </p>
+            <p class="dash-hero__hint" id="status" role="status"></p>
+          </div>
+        </div>
+      </section>
+
+      <div class="dash-grid">
+        <article class="dash-card">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Métricas del modelo (test)</h2>
+            <p class="dash-card__sub">Desde <code>GET /radiology/metrics</code></p>
+          </header>
+          <pre id="metricsOut" class="imports-pre">Cargando…</pre>
+        </article>
+
+        <article class="dash-card">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Inferencia</h2>
+            <p class="dash-card__sub">
+              Sube PNG o JPEG (224×224 internamente). <code>POST /radiology/predict</code>
+            </p>
+          </header>
+          <p class="dash-card__sub" style="margin-bottom: var(--space-4)">
+            <input id="fileRx" type="file" accept="image/png,image/jpeg" />
+          </p>
+          <button type="button" class="dash-hero__logout" id="btnPredict" style="border-radius: 8px">
+            Predecir
+          </button>
+          <pre id="predictOut" class="imports-pre" style="margin-top: var(--space-5)" hidden></pre>
+        </article>
+      </div>
+    </main>
+
+    <script src="/radiology.js"></script>
+  </body>
+</html>

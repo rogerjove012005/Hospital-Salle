@@ -215,8 +215,10 @@ async function boot() {
       : "Sesión activa.";
     applyRoleSpecifics(me);
     const navCsv = document.getElementById("navCsvImport");
-    if (navCsv && (me.role === "admin" || me.role === "medico")) {
-      navCsv.hidden = false;
+    const navRx = document.getElementById("navRadiology");
+    if (me.role === "admin" || me.role === "medico") {
+      if (navCsv) navCsv.hidden = false;
+      if (navRx) navRx.hidden = false;
     }
     setLoginMeta();
     mNextAppt.textContent = "—";

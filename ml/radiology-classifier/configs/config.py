@@ -17,8 +17,8 @@ class Config:
     IMG_SIZE = 224
     BATCH_SIZE = 32
     
-    # Clases
-    CLASSES = ['COVID-19', 'NEUMANIA', 'NORMAL']
+    # Orden estable: índices 0,1,2 usados por el dataset y sklearn
+    CLASSES = ['SANA', 'NEUMONIA', 'COVID-19']
     NUM_CLASSES = 3
     
     # Entrenamiento

@@ -2,6 +2,9 @@
 Script de entrenamiento del modelo de clasificación de radiografías
 """
 
+import matplotlib
+
+matplotlib.use("Agg")
 import numpy as np
 import os
 import sys
@@ -13,8 +16,11 @@ from sklearn.utils.class_weight import compute_sample_weight
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from configs.config import Config
 from training.preprocess import DataPreprocessor
 from training.model import create_model
+
+_MODEL_DIR = Path(Config.MODELS_DIR)
 
 
 class ModelTrainer:
@@ -65,8 +71,9 @@ class ModelTrainer:
 
         return self.history
 
-    def plot_training_history(self, output_dir='ml/radiology-classifier/models'):
+    def plot_training_history(self, output_dir=None):
         """Grafica la historia de entrenamiento"""
+        output_dir = output_dir or str(_MODEL_DIR)
         os.makedirs(output_dir, exist_ok=True)
 
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -95,8 +102,9 @@ class ModelTrainer:
         print(f"✓ Gráficas guardadas en: {output_dir}/training_history.png")
         plt.close()
 
-    def save_model(self, output_dir='ml/radiology-classifier/models'):
+    def save_model(self, output_dir=None):
         """Guarda el modelo entrenado con joblib"""
+        output_dir = output_dir or str(_MODEL_DIR)
         os.makedirs(output_dir, exist_ok=True)
 
         model_path = f'{output_dir}/model_final.pkl'

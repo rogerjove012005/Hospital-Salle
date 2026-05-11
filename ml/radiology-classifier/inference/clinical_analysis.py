@@ -4,8 +4,16 @@ Documento: Justificación técnica y consideraciones éticas/legales
 """
 
 import json
+import sys
 from pathlib import Path
 from datetime import datetime
+
+_PKG = Path(__file__).resolve().parent.parent
+if str(_PKG) not in sys.path:
+    sys.path.insert(0, str(_PKG))
+from configs.config import Config
+
+_DEFAULT_MODELS = Path(Config.MODELS_DIR)
 
 
 class ClinicalAnalysis:
@@ -16,8 +24,9 @@ class ClinicalAnalysis:
         self.metrics = metrics or {}
         self.analysis_report = {}
     
-    def generate_clinical_report(self, output_dir='ml/radiology-classifier/models'):
+    def generate_clinical_report(self, output_dir=None):
         """Genera reporte clínico completo"""
+        output_dir = output_dir or str(_DEFAULT_MODELS)
         
         print("\n" + "="*60)
         print("ANÁLISIS CLÍNICO DEL MODELO")
@@ -320,7 +329,7 @@ class ClinicalAnalysis:
 def main():
     """Script principal de análisis clínico"""
     
-    class_names = ['COVID-19', 'NEUMANIA', 'NORMAL']
+    class_names = list(Config.CLASSES)
     
     analyzer = ClinicalAnalysis(class_names)
     

@@ -26,6 +26,7 @@ from .auth import (
     require_roles,
 )
 from .csv_aggregates_stats import CsvSparkAggregatesOut, get_csv_spark_aggregates
+from .radiology import router as radiology_router
 from .dashboard_imports import (
     CsvBatchDetail,
     CsvImportResult,
@@ -64,6 +65,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(radiology_router)
 
 
 def _minio_client() -> Minio:

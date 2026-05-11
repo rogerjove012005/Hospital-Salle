@@ -9,6 +9,11 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from configs.config import Config
+
 class DataPreprocessor:
     """Gestor del preprocesamiento de imágenes"""
     
@@ -22,34 +27,43 @@ class DataPreprocessor:
         self.std = np.array([0.229, 0.224, 0.225])
     
     def load_and_prepare_data(self, dataset_path='data/synthetic'):
-        """Carga todas las imágenes del dataset"""
+        """Carga todas las imágenes del dataset (orden de clases fijado en Config.CLASSES)."""
         dataset_path = Path(dataset_path)
-        
+        if not dataset_path.is_absolute():
+            dataset_path = Path(Config.BASE_DIR) / dataset_path
+
         images = []
         labels = []
-        class_names = []
-        
-        for class_idx, class_dir in enumerate(sorted(dataset_path.iterdir())):
-            if class_dir.is_dir():
-                class_name = class_dir.name
-                class_names.append(class_name)
-                
-                for img_path in class_dir.glob('*.png'):
-                    # Cargar imagen en escala de grises
-                    img = Image.open(img_path).convert('L')  # Radiografías son escala gris
-                    
-                    # Redimensionar
-                    img = img.resize((self.img_size, self.img_size))
-                    
-                    # Convertir a array normalizado
-                    img_array = np.array(img) / 255.0
-                    
-                    # Convertir a 3 canales (para modelos RGB)
-                    img_array = np.stack([img_array] * 3, axis=-1)
-                    
-                    images.append(img_array)
-                    labels.append(class_idx)
-        
+        class_names = list(Config.CLASSES)
+
+        for class_idx, class_name in enumerate(class_names):
+            class_dir = dataset_path / class_name
+            if not class_dir.is_dir():
+                print(f"\n⚠ Carpeta ausente para clase '{class_name}': {class_dir}")
+                continue
+
+            for img_path in sorted(class_dir.glob('*.png')):
+                # Cargar imagen en escala de grises
+                img = Image.open(img_path).convert('L')  # Radiografías son escala gris
+
+                # Redimensionar
+                img = img.resize((self.img_size, self.img_size))
+
+                # Convertir a array normalizado
+                img_array = np.array(img) / 255.0
+
+                # Convertir a 3 canales (para modelos RGB)
+                img_array = np.stack([img_array] * 3, axis=-1)
+
+                images.append(img_array)
+                labels.append(class_idx)
+
+        if len(images) == 0:
+            raise RuntimeError(
+                f"No hay imágenes PNG bajo {dataset_path}. "
+                "Ejecute ml/radiology-classifier/scripts/generate_synthetic_radiology.py"
+            )
+
         images = np.array(images, dtype=np.float32)
         labels = np.array(labels, dtype=np.int32)
         

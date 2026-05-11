@@ -34,28 +34,31 @@ class DatasetManager:
         """
         print("Creando dataset sintético...")
         
-        classes = ['COVID-19', 'NEUMANIA', 'NORMAL']
+        classes = ['SANA', 'NEUMONIA', 'COVID-19']
         dataset_dir = self.data_dir / 'synthetic'
-        
+
         for class_name in classes:
             class_dir = dataset_dir / class_name
             class_dir.mkdir(parents=True, exist_ok=True)
-            
+
             for i in range(n_samples_per_class):
                 # Crear imagen aleatoria en escala de grises (simula radiografía)
                 img_array = np.random.randint(50, 200, (224, 224), dtype=np.uint8)
-                
+
                 # Añadir "patrones" sintéticos según la clase
                 if class_name == 'COVID-19':
                     # Simular infiltrados bilaterales
                     y, x = np.ogrid[:224, :224]
-                    mask = ((x - 100)**2 + (y - 100)**2 <= 50**2) | ((x - 124)**2 + (y - 124)**2 <= 50**2)
+                    mask = (
+                        ((x - 100) ** 2 + (y - 100) ** 2 <= 50**2)
+                        | ((x - 124) ** 2 + (y - 124) ** 2 <= 50**2)
+                    )
                     img_array[mask] = np.minimum(img_array[mask] + 40, 255)
-                    
-                elif class_name == 'NEUMANIA':
+
+                elif class_name == 'NEUMONIA':
                     # Simular consolidación focal
                     y, x = np.ogrid[:224, :224]
-                    mask = (x - 80)**2 + (y - 120)**2 <= 40**2
+                    mask = (x - 80) ** 2 + (y - 120) ** 2 <= 40**2
                     img_array[mask] = np.minimum(img_array[mask] + 30, 255)
                 
                 # Guardar imagen

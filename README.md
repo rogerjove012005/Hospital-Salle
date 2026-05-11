@@ -72,6 +72,7 @@ Repositorio base para estructurar el proyecto del **laSalle Health Center** (IA 
     - criterios de aceptación
 - Cada decisión relevante queda registrada como ADR:
   - `docs/adr/0001-<decision>.md`
+- **Radiografía (clasificación RX)**: desarrollo y PRs desde la rama **`feature/radiagrafia-rx`** (API `/radiology/*`, UI `/radiology.html`, build multi-stage en `services/api/Dockerfile`).
 
 ## Datos (CSV)
 

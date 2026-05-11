@@ -41,3 +41,8 @@ Variables de entorno en el job (véase Compose):
 2. Tras el job, existen ficheros Parquet bajo el volumen configurado.
 3. `GET /stats/csv-aggregates` (usuario autenticado) devuelve resumen y top de lotes por volumen de filas.
 4. El ADR `docs/adr/0002-pyspark-local-csv-aggregates.md` documenta la elección frente a Dask/Beam.
+
+## Diagrama de contexto
+
+Flujo alto nivel (ingesta → almacén → Spark → API): [`docs/architecture/pipeline-dataflow.md`](../architecture/pipeline-dataflow.md).
+

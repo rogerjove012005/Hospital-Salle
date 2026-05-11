@@ -99,6 +99,9 @@ Servicios principales incluidos en Compose:
 | frontend | Portal nginx + SPA estática (`/imports.html`) |
 | **mock-hospital-feed** | nginx que sirve un CSV ejemplo (simula API/sistema legacy) |
 | **csv-ingest-worker** | Ingesta **automatizada**: descarga esa URL (+ otras en `CSV_PULL_URLS`) y vigila `./csv-ingest-mounts/inbox/*.csv`; mueve resultado a `processed/` o `failed/` |
+| **spark-csv-aggregate** | **PySpark** `local[*]`: agregaciones por lote desde `csv_import_rows` → tablas `csv_spark_*` + Parquet bajo `./spark-processed-output/` |
+
+Tras ingestar datos, el API expone **`GET /stats/csv-aggregates`** (JWT) con el último snapshot agregado. Flujo dibujado en [`docs/architecture/pipeline-dataflow.md`](docs/architecture/pipeline-dataflow.md).
 
 Para probar sólo vigilancia carpeta sin feed HTTP:
 
@@ -106,18 +109,14 @@ Para probar sólo vigilancia carpeta sin feed HTTP:
 CSV_PULL_URLS= docker compose --env-file .env.example up -d csv-ingest-worker
 ```
 
-(SD completa del worker: [`docs/specs/automated-csv-ingestion.md`](docs/specs/automated-csv-ingestion.md).)
-
-Otros siguen planificados o parciales (ejemplo):
-
-- procesamiento distribuido (Spark/Dask) en `pipelines/processing/` — requisito académico aparte.
+(SD completa del worker: [`docs/specs/automated-csv-ingestion.md`](docs/specs/automated-csv-ingestion.md). Job Spark: [`docs/specs/pyspark-csv-aggregates.md`](docs/specs/pyspark-csv-aggregates.md).)
 
 Colocad el `docker-compose.yml` y los Dockerfiles en `infra/docker/` y documentad aquí:
 
 - Servicios esperados (ejemplo histórico):
   - base de datos estructurada (PostgreSQL ✓)
   - almacenamiento objetos (MinIO ✓)
-  - procesamiento (Spark/Dask) — pendiente de implementar pipeline académico
+  - procesamiento **PySpark** (contenedor `spark-csv-aggregate` ✓, modo cluster opcional fuera del alcance docente)
   - API (FastAPI ✓)
   - dashboard frontend estático ✓
 

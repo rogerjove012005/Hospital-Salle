@@ -1,4 +1,5 @@
-FROM apache/spark-py:3.5.3
+# Imagen oficial con Python + spark-submit (el repo apache/spark-py no publica todas las semver en Hub)
+FROM apache/spark:3.5.8-python3
 
 USER root
 

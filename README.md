@@ -72,7 +72,20 @@ Repositorio base para estructurar el proyecto del **laSalle Health Center** (IA 
     - criterios de aceptación
 - Cada decisión relevante queda registrada como ADR:
   - `docs/adr/0001-<decision>.md`
-- **Radiografía (clasificación RX)**: desarrollo y PRs desde la rama **`feature/radiagrafia-rx`** (API `/radiology/*`, UI `/radiology.html`, build multi-stage en `services/api/Dockerfile`).
+- **Radiografía (clasificación RX)**: desarrollo y PRs desde la rama **`feature/radiografia-rx`** (API `/radiology/*`, UI `/radiology.html`, build multi-stage en `services/api/Dockerfile`).
+
+## Encargo académico — bloque «Radiografía» (trazabilidad)
+
+| Requisito del enunciado | Dónde se cubre en el repo |
+|-------------------------|---------------------------|
+| Clasificación triple Sana / Neumonía / COVID-19 | `ml/radiology-classifier/` (`SANA`, `NEUMONIA`, `COVID-19`), SDD [`docs/specs/radiology-classifier.md`](docs/specs/radiology-classifier.md) |
+| Investigación y justificación técnica | `ml/radiology-classifier/README.md`, ADR [`docs/adr/0003-radiology-sklearn-baseline.md`](docs/adr/0003-radiology-sklearn-baseline.md) |
+| Tratamiento de datos (preprocesado, splits) | `training/preprocess.py`, datos sintéticos `scripts/generate_synthetic_radiology.py` |
+| Evaluación + matriz de confusión + criterio clínico | `training/evaluate.py`, `inference/clinical_analysis.py` → artefactos en build API |
+| Integración (API + Docker) | `services/api/app/radiology.py`, `services/api/Dockerfile`, Compose monorepo |
+| Visualización | `services/frontend/public/radiology.html` |
+| Ética y riesgos | [`docs/ethics/radiology-ia-etica.md`](docs/ethics/radiology-ia-etica.md) |
+| Diario IA (obligatorio) | [`docs/ai-dev-diary/2026-05-radiografia-ia.md`](docs/ai-dev-diary/2026-05-radiografia-ia.md) |
 
 ## Datos (CSV)
 
@@ -96,8 +109,8 @@ Servicios principales incluidos en Compose:
 | Servicio | Función breve |
 |----------|----------------|
 | postgres / minio / mailpit | Persistencia relacional + objetos + correo dev |
-| api | REST (auth, `/imports/csv*`, otros) |
-| frontend | Portal nginx + SPA estática (`/imports.html`) |
+| api | REST (auth, `/imports/csv*`, **`/radiology/metrics`** y **`/radiology/predict`**, otros) |
+| frontend | Portal nginx + estáticos (`/imports.html`, **`/radiology.html`**, landing) |
 | **mock-hospital-feed** | nginx que sirve un CSV ejemplo (simula API/sistema legacy) |
 | **csv-ingest-worker** | Ingesta **automatizada**: descarga esa URL (+ otras en `CSV_PULL_URLS`) y vigila `./csv-ingest-mounts/inbox/*.csv`; mueve resultado a `processed/` o `failed/` |
 | **spark-csv-aggregate** | **PySpark** `local[*]`: agregaciones por lote desde `csv_import_rows` → tablas `csv_spark_*` + Parquet bajo `./spark-processed-output/` |

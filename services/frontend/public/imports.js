@@ -104,6 +104,50 @@ async function doImport() {
   pre.textContent = JSON.stringify(body, null, 2);
   setStatus(body.duplicate_file ? "Lote ya existía (mismo contenido)." : "Importación completada.", "ok");
   await loadBatches();
+  await loadSparkStats();
+}
+
+/** @returns {Promise<boolean>} */
+async function loadSparkStats() {
+  const sum = qs("#sparkSummary");
+  const tbody = qs("#sparkTopTbody");
+  const empty = qs("#sparkEmpty");
+  if (!sum || !tbody || !empty) return true;
+  try {
+    const { body } = await apiJson("/stats/csv-aggregates?top=12");
+    const s = body.summary || {};
+    sum.innerHTML = `
+      <div class="imports-spark-kpis">
+        <div><span class="imports-spark-kpi-label">Último cálculo</span><strong>${escapeHtml(fmtDate(s.computed_at))}</strong></div>
+        <div><span class="imports-spark-kpi-label">Filas totales (agregado)</span><strong>${escapeHtml(String(s.total_rows ?? 0))}</strong></div>
+        <div><span class="imports-spark-kpi-label">Lotes con datos</span><strong>${escapeHtml(String(s.batches_with_rows ?? 0))}</strong></div>
+      </div>`;
+    tbody.innerHTML = "";
+    const tops = Array.isArray(body.top_batches) ? body.top_batches : [];
+    if (tops.length === 0) {
+      empty.hidden = false;
+      return true;
+    }
+    empty.hidden = true;
+    const max = Math.max(...tops.map((x) => Number(x.row_count) || 0), 1);
+    for (const t of tops) {
+      const rid = String(t.batch_id);
+      const rc = Number(t.row_count) || 0;
+      const pct = Math.max(4, Math.round((100 * rc) / max));
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+      <td><code>${escapeHtml(rid)}</code></td>
+      <td>${rc}</td>
+      <td><div class="imports-spark-barwrap" aria-hidden="true"><div class="imports-spark-bar" style="width:${pct}%"></div></div></td>`;
+      tbody.appendChild(tr);
+    }
+    return true;
+  } catch (e) {
+    tbody.innerHTML = "";
+    empty.hidden = true;
+    sum.textContent = `No se pudieron cargar las métricas Spark (${e.message || e}).`;
+    return false;
+  }
 }
 
 async function downloadBatchCsv(batchId) {
@@ -213,10 +257,14 @@ async function boot() {
       setStatus("Solo administración y personal autorizado pueden usar la ingesta CSV.", "error");
       qs("#cardPreview").style.opacity = "0.55";
       qs("#cardImport").style.opacity = "0.55";
+      const sp = qs("#cardSpark");
+      if (sp) sp.style.opacity = "0.55";
       return;
     }
     qs("#importsSub").textContent = `Sesión: ${me.email} · Rol: ${me.role}`;
     await loadBatches();
+    const sparkOk = await loadSparkStats();
+    if (!sparkOk) setStatus("Métricas Spark no disponibles o API en error.", "error");
   } catch (e) {
     setStatus(String(e.message || e), "error");
     if (String(e.message || "").includes("401")) {
@@ -239,5 +287,9 @@ qs("#btnImport")?.addEventListener("click", () =>
 qs("#btnRefresh")?.addEventListener("click", () =>
   loadBatches().catch((e) => setStatus(String(e.message || e), "error")),
 );
+qs("#btnSparkRefresh")?.addEventListener("click", async () => {
+  const ok = await loadSparkStats();
+  setStatus(ok ? "Métricas Spark actualizadas." : "No se pudo actualizar métricas Spark.", ok ? "ok" : "error");
+});
 
 boot();

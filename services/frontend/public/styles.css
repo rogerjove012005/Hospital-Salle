@@ -2062,6 +2062,43 @@ code {
   font-weight: 600;
 }
 
+.imports-spark-summary {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.imports-spark-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+.imports-spark-kpi-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.imports-spark-barwrap {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.imports-spark-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-dark));
+  min-width: 4%;
+  transition: width 0.25s ease;
+}
+
 @media (max-width: 900px) {
   #importsTop .dash-grid {
     grid-template-columns: 1fr !important;

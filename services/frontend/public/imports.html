@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260506a" />
+    <link rel="stylesheet" href="/styles.css?v=20260511b" />
     <script src="/config.js"></script>
   </head>
   <body class="dash-body">
@@ -100,9 +100,37 @@
         <p id="batchEmpty" class="dash-card__sub" hidden>Sin lotes todavía. Importe un CSV o genere uno de prueba.</p>
       </article>
 
+      <article class="dash-card" style="margin-top: var(--space-6)" id="cardSpark">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">4. Agregados PySpark (capa analítica)</h2>
+          <p class="dash-card__sub">
+            El contenedor <code>spark-csv-aggregate</code> recalcula métricas sobre
+            <code>csv_import_rows</code>. Vista vía <code>GET /stats/csv-aggregates</code> y salud en
+            <code>GET /health/pipeline</code>.
+            <button type="button" class="dash-hero__logout" id="btnSparkRefresh" style="margin-left: 12px">
+              Actualizar métricas
+            </button>
+          </p>
+        </header>
+        <div id="sparkSummary" class="imports-spark-summary" aria-live="polite"></div>
+        <div style="overflow-x: auto; margin-top: var(--space-4)">
+          <table class="imports-table" id="sparkTopTable" aria-label="Top lotes por filas agregadas">
+            <thead>
+              <tr>
+                <th>Lote (batch_id)</th>
+                <th>Filas</th>
+                <th>Barra relativa</th>
+              </tr>
+            </thead>
+            <tbody id="sparkTopTbody"></tbody>
+          </table>
+        </div>
+        <p id="sparkEmpty" class="dash-card__sub" hidden>Aún no hay agregados (esperar el job Spark o importar CSV).</p>
+      </article>
+
       <article class="dash-card" style="margin-top: var(--space-6)">
         <header class="dash-card__head">
-          <h2 class="dash-card__title">4. Detalle del lote</h2>
+          <h2 class="dash-card__title">5. Detalle del lote</h2>
           <p class="dash-card__sub">
             <code>GET /imports/csv/{batch_id}</code>,
             <code>GET /imports/csv/{batch_id}/quality-issues</code> y

@@ -1,51 +1,59 @@
-# Clasificador de Radiografías - Modelo de Deep Learning
+# Clasificador de radiografías de tórax (triple clase)
 
-## Descripción
-Modelo CNN para clasificación de radiografías de tórax en tres categorías:
-- **Sana**: Sin patologías detectables
-- **Neumonía**: Infección bacteriana o viral estándar
-- **COVID-19**: Patrones específicos asociados a COVID-19
+Clasificación supervisada en **tres categorías** del encargo: **Sana** (`SANA`), **Neumonía** (`NEUMONIA`), **COVID-19** (`COVID-19`).
 
-## Estructura del proyecto
+## Estado de la implementación (honestidad técnica)
+
+| Aspecto | Implementación en este repo | Relación con el encargo |
+|---------|------------------------------|-------------------------|
+| **Modelo** | Pipeline **scikit-learn**: `StandardScaler` → `PCA` → `MLPClassifier` sobre imagen aplanada. | Clasificación de imágenes + métricas + matriz de confusión + reflexión clínica. |
+| **Deep Learning (CNN)** | **No** está entrenada una CNN en el código actual; está **documentada como evolución** (EfficientNet / ResNet + transfer learning). | El enunciado pide investigar DL; el ADR `docs/adr/0003-radiology-sklearn-baseline.md` justifica el baseline y la migración. |
+| **Datos** | **Sintéticos** generados por script (radiografías reales no versionadas). | Cumple privacidad y reproducibilidad académica. |
+
+## Estructura útil
 
 ```
 ml/radiology-classifier/
-├── data/                    # Datasets
-├── configs/                 # Configuraciones
-├── training/                # Scripts de entrenamiento
-├── inference/               # Scripts de inferencia
-├── notebooks/               # Jupyter notebooks para análisis
-└── requirements.txt         # Dependencias
+├── configs/config.py          # CLASSES, rutas, IMG_SIZE
+├── data/                      # synthetic/ (gitignored salvo regeneración)
+├── inference/clinical_analysis.py
+├── scripts/
+│   ├── generate_synthetic_radiology.py
+│   └── bootstrap_model.py     # genera datos + train + evaluate + clinical JSON
+├── training/
+│   ├── preprocess.py
+│   ├── train.py
+│   ├── evaluate.py
+│   └── model.py
+└── models/                    # artefactos (gitignored; se crean en Docker o local)
 ```
 
-## Uso
+## Entorno local (venv recomendado)
 
-1. Instalar dependencias: `pip install -r requirements.txt`
-2. Descargar dataset: `python data/download_dataset.py`
-3. Preparar datos: `python data/prepare_data.py`
-4. Entrenar modelo: `python training/train.py`
-5. Evaluar: `python training/evaluate.py`
+```bash
+cd ml/radiology-classifier
+python3 -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install numpy pillow scikit-learn joblib matplotlib seaborn pandas scipy
+export MPLBACKEND=Agg
+python scripts/bootstrap_model.py
+```
 
-## Investigación y Decisiones Técnicas
+Esto escribe PNG sintéticos, entrena, guarda `models/*` y figuras de evaluación.
 
-### Arquitectura del Modelo
-- CNN con TransferLearning usando EfficientNetB4 pre-entrenado en ImageNet
-- Razón: Balance óptimo entre precisión y eficiencia computacional
-- Capas personalizadas para adaptarse a nuestras 3 clases
+## Investigación y decisiones (resumen)
 
-### Tratamiento de Datos
-- Redimensionamiento a 224x224 (tamaño estándar para EfficientNet)
-- Normalización: ImageNet statistics
-- Data augmentation para balance de clases
+1. **Arquitectura**: PCA reduce dimensionalidad de píxeles; MLP captura no linealidades con coste computacional moderado frente a CNN en CPU.
+2. **Preprocesado**: 224×224, gris → tres canales, normalización [0,1]; split estratificado.
+3. **Evaluación**: accuracy no es el único foco; se documentan **FN en patologías contagiosas** y lectura de matriz de confusión.
+4. **Integración**: artefactos consumidos por la **API** (`/radiology/*`) y UI; build multi-stage en `services/api/Dockerfile`.
 
-### Evaluación Clínica
-- Focus en matriz de confusión para errores críticos (falsos negativos en COVID)
-- Análisis de sensibilidad vs especificidad
-- Justificación médica de las decisiones tomadas
+## Hoja de ruta hacia Deep Learning
 
-## Consideraciones Éticas
+- Dataset público o institucional con gobernanza (CheXpert-like, COVID-19 chest X-ray collections) con splits por hospital.
+- **CNN 2D** o **transfer learning** (EfficientNet-B0/B4, ResNet50) con cabeza de 3 logits, fine-tuning parcial.
+- **Grad-CAM** o similar para explicabilidad clínica.
+- Entrenamiento en GPU (Docker `nvidia-runtime`) y versión de artefacto ONNX/TorchScript.
 
-- Sesgo en dataset: Se documentará la representatividad del dataset
-- Falsos negativos críticos: Especialmente importantes en COVID-19
-- Limitaciones del modelo: No reemplaza diagnóstico médico profesional
-- Privacidad: Uso de datos sintéticos/públicos solo
+## Ética y límites
+
+Ver `docs/ethics/radiology-ia-etica.md` y el JSON generado `models/clinical_analysis.json` tras el bootstrap.

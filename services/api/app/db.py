@@ -192,3 +192,42 @@ def init_auth_schema() -> None:
         conn.execute(text("CREATE INDEX IF NOT EXISTS data_quality_issues_dataset_idx ON data_quality_issues(dataset);"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS pipeline_events_stage_idx ON pipeline_events(stage);"))
 
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS csv_spark_run_summary (
+                  id INTEGER PRIMARY KEY DEFAULT 1,
+                  computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  total_rows BIGINT NOT NULL DEFAULT 0,
+                  batches_with_rows INTEGER NOT NULL DEFAULT 0,
+                  CONSTRAINT csv_spark_run_summary_singleton CHECK (id = 1)
+                );
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO csv_spark_run_summary (id, computed_at, total_rows, batches_with_rows)
+                SELECT 1, NOW(), 0, 0
+                WHERE NOT EXISTS (SELECT 1 FROM csv_spark_run_summary WHERE id = 1);
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS csv_spark_batch_row_counts (
+                  batch_id UUID PRIMARY KEY,
+                  row_count BIGINT NOT NULL,
+                  computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS csv_spark_batch_row_counts_computed_idx ON csv_spark_batch_row_counts(computed_at DESC);"
+            )
+        )
+

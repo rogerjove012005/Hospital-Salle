@@ -28,6 +28,8 @@ Variables de entorno en el job (véase Compose):
 | Tabla `csv_spark_batch_row_counts` | `batch_id`, `row_count`, `computed_at` (último job sobrescribe mediante `truncate` + insert vía JDBC) |
 | Tabla `csv_spark_run_summary` | fila singleton `id=1`: `computed_at`, `total_rows`, `batches_with_rows` |
 | Parquet `/data/processed/spark/csv_row_counts/` | Dataset particionado por `pdate` derivada de `computed_at` |
+| `pipeline_events` | Tras cada ciclo, el worker inserta `stage=spark_csv_aggregate` (ok / error); visibles en `GET /admin/imports/pipeline-events` |
+| Observabilidad HTTP | `GET /health/pipeline` expone último `computed_at`, `total_rows`, `batches_with_rows` sin JWT |
 
 ## Restricciones
 

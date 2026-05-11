@@ -101,7 +101,7 @@ Servicios principales incluidos en Compose:
 | **csv-ingest-worker** | Ingesta **automatizada**: descarga esa URL (+ otras en `CSV_PULL_URLS`) y vigila `./csv-ingest-mounts/inbox/*.csv`; mueve resultado a `processed/` o `failed/` |
 | **spark-csv-aggregate** | **PySpark** `local[*]`: agregaciones por lote desde `csv_import_rows` → tablas `csv_spark_*` + Parquet bajo `./spark-processed-output/` |
 
-Tras ingestar datos, el API expone **`GET /stats/csv-aggregates`** (JWT) con el último snapshot agregado. Flujo dibujado en [`docs/architecture/pipeline-dataflow.md`](docs/architecture/pipeline-dataflow.md).
+Tras ingestar datos, el API expone **`GET /stats/csv-aggregates`** (JWT) con el último snapshot agregado y **`GET /health/pipeline`** (sin JWT) para comprobar rápido fecha y totales del último job. Los eventos `spark_csv_aggregate` aparecen en **`GET /admin/imports/pipeline-events`**. Flujo dibujado en [`docs/architecture/pipeline-dataflow.md`](docs/architecture/pipeline-dataflow.md).
 
 Para probar sólo vigilancia carpeta sin feed HTTP:
 

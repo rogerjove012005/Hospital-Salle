@@ -798,7 +798,7 @@ def list_csv_pipeline_events(limit: int = 50) -> list[PipelineEventOut]:
                 """
                 SELECT event_id, stage, status, message, payload_ref, created_at
                 FROM pipeline_events
-                WHERE stage IN ('csv_ingestion')
+                WHERE stage IN ('csv_ingestion', 'spark_csv_aggregate')
                 ORDER BY created_at DESC
                 LIMIT :lim
                 """

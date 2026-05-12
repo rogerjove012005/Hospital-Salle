@@ -1,5 +1,26 @@
 # Clasificador de radiografías de tórax (triple clase)
 
+## Arranque rápido (macOS)
+
+1. **Carpeta correcta:** tiene que existir el fichero `requirements-sklearn.txt` junto a `scripts/`. Compruébalo:
+   ```bash
+   cd "$(git rev-parse --show-toplevel)/ml/radiology-classifier"
+   pwd
+   ls -la requirements-sklearn.txt scripts/bootstrap_model.py
+   ```
+   Si `requirements-sklearn.txt` no existe, actualiza el repo (`git pull`) o copia el fichero desde la última versión del proyecto.
+
+2. **No hagas** `cd ml/radiology-classifier` si el prompt ya termina en `radiology-classifier` (estarías intentando entrar en `.../ml/radiology-classifier/ml/radiology-classifier`, que no existe).
+
+3. Instalación y bootstrap (siempre **desde** `ml/radiology-classifier`):
+   ```bash
+   python3 -m venv .venv && source .venv/bin/activate
+   python3 -m pip install -r requirements-sklearn.txt
+   export MPLBACKEND=Agg
+   python3 scripts/sync_chest_xray_from_downloads.py --source ~/Downloads/chest_xray/train
+   python3 scripts/bootstrap_model.py
+   ```
+
 Clasificación supervisada en **tres categorías** del encargo: **Sana** (`SANA`), **Neumonía** (`NEUMONIA`), **COVID-19** (`COVID-19`).
 
 ## Estado de la implementación (honestidad técnica)
@@ -36,7 +57,8 @@ El Chest X-Ray público más habitual incluye solo **NORMAL** y **PNEUMONIA**. P
 2. El script crea `data/cxr_local/` con `SANA` ← NORMAL, `NEUMONIA` ← PNEUMONIA y **`COVID-19`** con imágenes **sintéticas** generadas en el mismo repo.
 
 ```bash
-cd ml/radiology-classifier
+# Desde la raíz del repositorio (carpeta que contiene ml/ y services/)
+cd "$(git rev-parse --show-toplevel)/ml/radiology-classifier"
 python3 scripts/sync_chest_xray_from_downloads.py --source ~/Downloads/chest_xray/train
 python3 scripts/bootstrap_model.py
 ```
@@ -46,12 +68,17 @@ Si `data/cxr_local/` está completo, `training/train.py` y `bootstrap_model.py` 
 ## Entorno local (venv recomendado)
 
 ```bash
-cd ml/radiology-classifier
-python3 -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install numpy pillow scikit-learn joblib matplotlib seaborn pandas scipy
+cd "$(git rev-parse --show-toplevel)/ml/radiology-classifier"
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+python3 -m pip install -r requirements-sklearn.txt
 export MPLBACKEND=Agg
-python scripts/bootstrap_model.py
+python3 scripts/bootstrap_model.py
 ```
+
+En macOS a menudo **no** hay comandos `python` ni `pip` en el PATH: usa **`python3`** y **`python3 -m pip`**. Sin venv: `python3 -m pip install --user -r requirements-sklearn.txt`.
+
+Si aparece `ModuleNotFoundError` (p. ej. `seaborn`), reinstala con `python3 -m pip install -r requirements-sklearn.txt` (con el venv activado). El fichero `requirements.txt` histórico incluye TensorFlow y es opcional para este pipeline sklearn.
 
 Esto escribe PNG sintéticos, entrena, guarda `models/*` y figuras de evaluación.
 

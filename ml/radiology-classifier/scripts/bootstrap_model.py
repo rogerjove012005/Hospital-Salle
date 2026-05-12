@@ -2,7 +2,7 @@
 """
 Dataset sintético → entrenamiento → evaluación (matriz, ROC, JSON) → nota clínica.
 Ejecución esperada desde la carpeta ml/radiology-classifier con PYTHONPATH configurado,
-o mediante `python scripts/bootstrap_model.py` tras insertar ROOT en sys.path.
+o mediante `python3 scripts/bootstrap_model.py` tras insertar ROOT en sys.path.
 """
 
 from __future__ import annotations
@@ -21,9 +21,38 @@ def _ensure_pkg_root() -> Path:
     return root
 
 
+def _require_bootstrap_deps() -> None:
+    """Fallo temprano con instrucción clara (p. ej. falta seaborn en el venv)."""
+    missing: list[str] = []
+    for name, mod in (
+        ("numpy", "numpy"),
+        ("PIL", "PIL"),
+        ("sklearn", "sklearn"),
+        ("matplotlib", "matplotlib"),
+        ("seaborn", "seaborn"),
+        ("joblib", "joblib"),
+        ("pandas", "pandas"),
+    ):
+        try:
+            __import__(mod)
+        except ImportError:
+            missing.append(name)
+    if missing:
+        root = Path(__file__).resolve().parent.parent
+        raise SystemExit(
+            "Faltan paquetes Python en este entorno: "
+            + ", ".join(missing)
+            + "\n\nInstálalos desde la carpeta ml/radiology-classifier (macOS: suele no existir `pip`; use python3):\n"
+            f"  python3 -m pip install -r {root / 'requirements-sklearn.txt'}\n\n"
+            "O bien el requirements completo del módulo (incluye TensorFlow, más pesado):\n"
+            f"  python3 -m pip install -r {root / 'requirements.txt'}\n"
+        )
+
+
 def main() -> None:
     _ensure_pkg_root()
     os.environ.setdefault("MPLBACKEND", "Agg")
+    _require_bootstrap_deps()
 
     from configs.config import Config, _radiology_dataset_ready, resolve_radiology_dataset_dir
     from scripts.generate_synthetic_radiology import generate_all
@@ -39,7 +68,7 @@ def main() -> None:
     elif not _radiology_dataset_ready(root):
         raise SystemExit(
             "El dataset resuelto no está completo. Ejecute:\n"
-            "  python scripts/sync_chest_xray_from_downloads.py --source ~/Downloads/chest_xray/train\n"
+            "  python3 scripts/sync_chest_xray_from_downloads.py --source ~/Downloads/chest_xray/train\n"
             "desde ml/radiology-classifier (o ajuste RADIOLOGY_DATA_DIR)."
         )
 

@@ -8,7 +8,7 @@ COVID-19 se completa con el generador sintético del propio proyecto.
 
 Uso típico (desde la raíz del repo o desde ml/radiology-classifier):
 
-  python scripts/sync_chest_xray_from_downloads.py \\
+  python3 scripts/sync_chest_xray_from_downloads.py \\
     --source ~/Downloads/chest_xray/train
 
 Opciones:
@@ -99,7 +99,7 @@ def main() -> None:
     print(f"  SANA (desde NORMAL): {n_sana} imágenes")
     print(f"  NEUMONIA (desde PNEUMONIA): {n_neu} imágenes")
     print(f"  COVID-19 (sintético): {args.n_covid_synthetic} imágenes")
-    print("  Entrene con: cd ml/radiology-classifier && python scripts/bootstrap_model.py")
+    print("  Entrene con: cd ml/radiology-classifier && python3 scripts/bootstrap_model.py")
 
 
 if __name__ == "__main__":

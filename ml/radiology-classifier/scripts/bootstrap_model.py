@@ -25,13 +25,24 @@ def main() -> None:
     _ensure_pkg_root()
     os.environ.setdefault("MPLBACKEND", "Agg")
 
-    from configs.config import Config
+    from configs.config import Config, _radiology_dataset_ready, resolve_radiology_dataset_dir
     from scripts.generate_synthetic_radiology import generate_all
     from training.evaluate import ModelEvaluator
     from training.train import main as train_main
     from inference.clinical_analysis import ClinicalAnalysis
 
-    generate_all()
+    root = resolve_radiology_dataset_dir()
+    print(f"\n→ Dataset resuelto: {root}")
+    if root.name == "synthetic":
+        if not _radiology_dataset_ready(root):
+            generate_all()
+    elif not _radiology_dataset_ready(root):
+        raise SystemExit(
+            "El dataset resuelto no está completo. Ejecute:\n"
+            "  python scripts/sync_chest_xray_from_downloads.py --source ~/Downloads/chest_xray/train\n"
+            "desde ml/radiology-classifier (o ajuste RADIOLOGY_DATA_DIR)."
+        )
+
     model, trainer, X_test, y_test, class_names = train_main()
 
     model_dir = Path(Config.MODELS_DIR)

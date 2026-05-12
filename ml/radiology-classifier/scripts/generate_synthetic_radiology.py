@@ -59,12 +59,37 @@ def _covid_patch(h: int, w: int, rng: np.random.Generator) -> np.ndarray:
     return np.clip(img, 0.0, 1.0)
 
 
+_PATCH = {"SANA": _sana_patch, "NEUMONIA": _neumonia_patch, "COVID-19": _covid_patch}
+
+
+def write_synthetic_class(
+    out_dir: Path,
+    class_name: str,
+    n: int,
+    *,
+    seed: int = 42,
+    img_size: int = 224,
+    prefix: str = "sample",
+) -> Path:
+    """Escribe n PNG sintéticos para una sola clase (SANA, NEUMONIA o COVID-19)."""
+    if class_name not in _PATCH:
+        raise ValueError(f"Clase no soportada: {class_name}")
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(seed)
+    fn = _PATCH[class_name]
+    for i in range(n):
+        arr = fn(img_size, img_size, rng)
+        pix = (arr * 255.0).clip(0, 255).astype(np.uint8)
+        Image.fromarray(pix, mode="L").save(out_dir / f"{prefix}_{i:04d}.png")
+    return out_dir
+
+
 def generate_all(seed: int = 42, n_per_class: int = 48, img_size: int = 224) -> Path:
     root = Path(__file__).resolve().parent.parent / "data" / "synthetic"
     rng = np.random.default_rng(seed)
-    gens = {"SANA": _sana_patch, "NEUMONIA": _neumonia_patch, "COVID-19": _covid_patch}
 
-    for name, fn in gens.items():
+    for name, fn in _PATCH.items():
         target = root / name
         target.mkdir(parents=True, exist_ok=True)
         for i in range(n_per_class):

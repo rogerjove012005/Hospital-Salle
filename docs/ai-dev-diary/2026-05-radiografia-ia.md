@@ -17,10 +17,11 @@
 2. *«Alinea las tres clases del encargo (Sana, Neumonía, COVID-19) en config, preprocesado y evaluación; corrige análisis de errores que asumía orden fijo de clases.»*  
    **Resultado:** `Config.CLASSES`, `evaluate.py` con `confusion_matrix(..., labels=...)`, FN por nombre de clase.
 
-3. *«Documenta SDD + ética + ADR sin inventar accuracy clínico; deja claro baseline sklearn vs roadmap CNN.»*  
-   **Resultado:** este diario, `docs/ethics/radiology-ia-etica.md`, ADR 0003, README ML honesto.
+3. *«Conecta el Chest X-Ray de Downloads (NORMAL/PNEUMONIA) al entrenamiento manteniendo triple clase y documenta el mapeo.»*  
+   **Resultado:** `sync_chest_xray_from_downloads.py`, `resolve_radiology_dataset_dir()`, JPEG en `preprocess.py`, SDD actualizada.
 
-## Donde la IA acertó
+4. *«Documenta SDD + ética + ADR sin inventar accuracy clínico; deja claro baseline sklearn vs roadmap CNN.»*  
+   **Resultado:** `docs/ethics/radiology-ia-etica.md`, ADR 0003, README ML honesto.
 
 - Estructura de **commits atómicos** y convención **Conventional Commits** en mensajes.
 - Detección de **riesgos de integración** (contexto Docker solo `services/api` vs monorepo).

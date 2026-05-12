@@ -81,6 +81,7 @@ Repositorio base para estructurar el proyecto del **laSalle Health Center** (IA 
 | Clasificación triple Sana / Neumonía / COVID-19 | `ml/radiology-classifier/` (`SANA`, `NEUMONIA`, `COVID-19`), SDD [`docs/specs/radiology-classifier.md`](docs/specs/radiology-classifier.md) |
 | Investigación y justificación técnica | `ml/radiology-classifier/README.md`, ADR [`docs/adr/0003-radiology-sklearn-baseline.md`](docs/adr/0003-radiology-sklearn-baseline.md) |
 | Tratamiento de datos (preprocesado, splits) | `training/preprocess.py`, datos sintéticos `scripts/generate_synthetic_radiology.py` |
+| **Imágenes reales (Chest X-Ray)** + triple clase | `scripts/sync_chest_xray_from_downloads.py` → `data/cxr_local/` (NORMAL→SANA, PNEUMONIA→NEUMONIA; COVID sintético) |
 | Evaluación + matriz de confusión + criterio clínico | `training/evaluate.py`, `inference/clinical_analysis.py` → artefactos en build API |
 | Integración (API + Docker) | `services/api/app/radiology.py`, `services/api/Dockerfile`, Compose monorepo |
 | Visualización | `services/frontend/public/radiology.html` |

@@ -68,16 +68,29 @@ El resultado es **probabilístico** y lleva **disclaimer** explícito: no consti
 4. Imagen API construida con **Compose** desde monorepo (`context: ../..`, `dockerfile: services/api/Dockerfile`).
 5. Documentación SDD + ética + ADR + integración enlazada desde README.
 
-## 8. Referencias en código
+## 8. Dataset Chest X-Ray (dos clases) + triple clase del encargo
+
+El repositorio incluye el script **`scripts/sync_chest_xray_from_downloads.py`**, pensado para la carpeta típica de Kaggle **`chest_xray/train/`** con subcarpetas **`NORMAL/`** y **`PNEUMONIA/`** (p. ej. en `~/Downloads/chest_xray/train`).
+
+| Carpeta origen | Carpeta del proyecto (`data/cxr_local/`) | Notas |
+|-----------------|---------------------------------------------|--------|
+| `NORMAL/` | `SANA/` | Copia submuestreada (JPEG/PNG). |
+| `PNEUMONIA/` | `NEUMONIA/` | Copia submuestreada. |
+| — | `COVID-19/` | **No existe** en ese dataset público clásico; se rellena con **PNG sintéticos** (`write_synthetic_class`) para mantener la **clasificación triple** exigida en el enunciado. |
+
+Tras sincronizar, `resolve_radiology_dataset_dir()` elige automáticamente `data/cxr_local/` si está completo; si no, cae a `data/synthetic/`. También se puede forzar con la variable de entorno **`RADIOLOGY_DATA_DIR`**.
+
+## 9. Referencias en código
 
 | Ruta | Rol |
 |------|-----|
-| `ml/radiology-classifier/scripts/generate_synthetic_radiology.py` | Datos sintéticos |
+| `ml/radiology-classifier/scripts/sync_chest_xray_from_downloads.py` | Montar `data/cxr_local` desde Downloads |
+| `ml/radiology-classifier/scripts/generate_synthetic_radiology.py` | Datos sintéticos y COVID auxiliar |
 | `ml/radiology-classifier/scripts/bootstrap_model.py` | Pipeline offline completo |
 | `services/api/app/radiology.py` | Router FastAPI |
 | `services/frontend/public/radiology.html` | UI |
 
-## 9. Documentación relacionada
+## 10. Documentación relacionada
 
 - **Decisión de modelo (baseline vs CNN):** [`docs/adr/0003-radiology-sklearn-baseline.md`](../adr/0003-radiology-sklearn-baseline.md)
 - **Ética y privacidad:** [`docs/ethics/radiology-ia-etica.md`](../ethics/radiology-ia-etica.md)

@@ -28,6 +28,21 @@ ml/radiology-classifier/
 └── models/                    # artefactos (gitignored; se crean en Docker o local)
 ```
 
+## Dataset real Chest X-Ray (NORMAL / PNEUMONIA) + COVID sintético
+
+El Chest X-Ray público más habitual incluye solo **NORMAL** y **PNEUMONIA**. Para cumplir la **triple clase** del encargo:
+
+1. Copiá el dataset (por ejemplo desde `~/Downloads/chest_xray/train`) con el script de sincronización (submuestreo opcional).
+2. El script crea `data/cxr_local/` con `SANA` ← NORMAL, `NEUMONIA` ← PNEUMONIA y **`COVID-19`** con imágenes **sintéticas** generadas en el mismo repo.
+
+```bash
+cd ml/radiology-classifier
+python3 scripts/sync_chest_xray_from_downloads.py --source ~/Downloads/chest_xray/train
+python3 scripts/bootstrap_model.py
+```
+
+Si `data/cxr_local/` está completo, `training/train.py` y `bootstrap_model.py` lo usan automáticamente; si no, se usa `data/synthetic/`. Variable opcional: `RADIOLOGY_DATA_DIR`.
+
 ## Entorno local (venv recomendado)
 
 ```bash

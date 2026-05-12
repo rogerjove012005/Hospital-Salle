@@ -101,6 +101,8 @@ Requisitos: `pip install pandas openpyxl`.
 
 ## Ejecución (`docker compose`)
 
+Desde la **raíz del repositorio** (la carpeta que contiene `infra/` y `ml/`). Si estás en `ml/radiology-classifier/`, usa `cd ../../infra/docker` o `cd "$(git rev-parse --show-toplevel)/infra/docker"`.
+
 ```bash
 cd infra/docker
 docker compose --env-file .env.example up --build

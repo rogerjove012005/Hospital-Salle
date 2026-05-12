@@ -42,7 +42,12 @@ class DataPreprocessor:
                 print(f"\n⚠ Carpeta ausente para clase '{class_name}': {class_dir}")
                 continue
 
-            for img_path in sorted(class_dir.glob('*.png')):
+            paths = sorted(
+                p
+                for p in class_dir.iterdir()
+                if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg"}
+            )
+            for img_path in paths:
                 # Cargar imagen en escala de grises
                 img = Image.open(img_path).convert('L')  # Radiografías son escala gris
 
@@ -60,8 +65,8 @@ class DataPreprocessor:
 
         if len(images) == 0:
             raise RuntimeError(
-                f"No hay imágenes PNG bajo {dataset_path}. "
-                "Ejecute ml/radiology-classifier/scripts/generate_synthetic_radiology.py"
+                f"No hay imágenes (.png/.jpg/.jpeg) bajo {dataset_path}. "
+                "Ejecute scripts/generate_synthetic_radiology.py o scripts/sync_chest_xray_from_downloads.py"
             )
 
         images = np.array(images, dtype=np.float32)
@@ -206,9 +211,12 @@ def main():
     print("Iniciando preprocessing del dataset...")
     
     preprocessor = DataPreprocessor(img_size=224, batch_size=32, seed=42)
-    
-    # Cargar datos
-    images, labels, class_names = preprocessor.load_and_prepare_data('data/synthetic')
+
+    from configs.config import resolve_radiology_dataset_dir
+
+    root = resolve_radiology_dataset_dir()
+    print(f"Dataset: {root}")
+    images, labels, class_names = preprocessor.load_and_prepare_data(str(root))
     
     # Dividir datos
     X_train, X_val, X_test, y_train, y_val, y_test = preprocessor.split_data(

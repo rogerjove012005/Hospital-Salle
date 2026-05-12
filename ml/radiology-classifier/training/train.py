@@ -16,7 +16,7 @@ from sklearn.utils.class_weight import compute_sample_weight
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from configs.config import Config
+from configs.config import Config, resolve_radiology_dataset_dir
 from training.preprocess import DataPreprocessor
 from training.model import create_model
 
@@ -132,7 +132,9 @@ def main():
     print("Iniciando pipeline de entrenamiento...")
 
     preprocessor = DataPreprocessor(img_size=224, batch_size=32, seed=42)
-    images, labels, class_names = preprocessor.load_and_prepare_data('data/synthetic')
+    dataset_root = resolve_radiology_dataset_dir()
+    print(f"\n→ Directorio de dataset: {dataset_root}")
+    images, labels, class_names = preprocessor.load_and_prepare_data(str(dataset_root))
     X_train, X_val, X_test, y_train, y_val, y_test = preprocessor.split_data(
         images, labels, test_size=0.2, val_size=0.1
     )

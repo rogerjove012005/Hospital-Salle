@@ -1,0 +1,5 @@
+# Excluir del contexto Docker (build API desde raíz del monorepo)
+ml/radiology-classifier/data/cxr_local/
+ml/radiology-classifier/data/synthetic/
+ml/radiology-classifier/.venv/
+ml/radiology-classifier/models/

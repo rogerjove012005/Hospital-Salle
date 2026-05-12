@@ -38,6 +38,7 @@ infra/docker/spark-processed-output/
 
 # Radiología sintética local (se regenera con scripts o en build Docker)
 ml/radiology-classifier/data/synthetic/
+ml/radiology-classifier/data/cxr_local/
 ml/radiology-classifier/models/
 
 # Model artifacts

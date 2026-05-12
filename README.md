@@ -83,6 +83,7 @@ Repositorio base para estructurar el proyecto del **laSalle Health Center** (IA 
 | Tratamiento de datos (preprocesado, splits) | `training/preprocess.py`, datos sintéticos `scripts/generate_synthetic_radiology.py` |
 | **Imágenes reales (Chest X-Ray)** + triple clase | `scripts/sync_chest_xray_from_downloads.py` → `data/cxr_local/` (NORMAL→SANA, PNEUMONIA→NEUMONIA; COVID sintético) |
 | Evaluación + matriz de confusión + criterio clínico | `training/evaluate.py`, `inference/clinical_analysis.py` → artefactos en build API |
+| **Deep Learning (CNN prototipo)** | `training/cnn_baseline_torch.py`, `scripts/train_cnn_baseline.py`, `requirements-cnn.txt`, ADR [`docs/adr/0004-radiology-cnn-prototype-pytorch.md`](docs/adr/0004-radiology-cnn-prototype-pytorch.md) |
 | Integración (API + Docker) | `services/api/app/radiology.py`, `services/api/Dockerfile`, Compose monorepo |
 | Visualización | `services/frontend/public/radiology.html` |
 | Ética y riesgos | [`docs/ethics/radiology-ia-etica.md`](docs/ethics/radiology-ia-etica.md) |

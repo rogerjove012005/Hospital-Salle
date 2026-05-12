@@ -1,0 +1,4 @@
+# Prototipo CNN (PyTorch). Instalar aparte del baseline sklearn:
+#   python3 -m pip install -r requirements-cnn.txt
+# CPU (macOS/Linux): instalar torch desde https://pytorch.org si hace falta wheel específico.
+torch>=2.2,<3

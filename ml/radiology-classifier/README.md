@@ -28,7 +28,7 @@ Clasificación supervisada en **tres categorías** del encargo: **Sana** (`SANA`
 | Aspecto | Implementación en este repo | Relación con el encargo |
 |---------|------------------------------|-------------------------|
 | **Modelo** | Pipeline **scikit-learn**: `StandardScaler` → `PCA` → `MLPClassifier` sobre imagen aplanada. | Clasificación de imágenes + métricas + matriz de confusión + reflexión clínica. |
-| **Deep Learning (CNN)** | **No** está entrenada una CNN en el código actual; está **documentada como evolución** (EfficientNet / ResNet + transfer learning). | El enunciado pide investigar DL; el ADR `docs/adr/0003-radiology-sklearn-baseline.md` justifica el baseline y la migración. |
+| **Deep Learning (CNN)** | **Prototipo PyTorch** (`cnn_baseline_torch.py` + `train_cnn_baseline.py`); la API Docker sigue con el **baseline sklearn** por tamaño y reproducibilidad. | Encargo DL: CNN real entrenable localmente; ver ADR **0004** y hoja de ruta transfer learning en ADR **0003**. |
 | **Datos** | **Sintéticos** generados por script (radiografías reales no versionadas). | Cumple privacidad y reproducibilidad académica. |
 
 ## Estructura útil
@@ -40,10 +40,13 @@ ml/radiology-classifier/
 ├── inference/clinical_analysis.py
 ├── scripts/
 │   ├── generate_synthetic_radiology.py
-│   └── bootstrap_model.py     # genera datos + train + evaluate + clinical JSON
+│   ├── sync_chest_xray_from_downloads.py
+│   ├── bootstrap_model.py
+│   └── train_cnn_baseline.py    # CNN PyTorch (opcional)
 ├── training/
 │   ├── preprocess.py
 │   ├── train.py
+│   ├── cnn_baseline_torch.py    # red convolucional pequeña
 │   ├── evaluate.py
 │   └── model.py
 └── models/                    # artefactos (gitignored; se crean en Docker o local)
@@ -99,3 +102,16 @@ Esto escribe PNG sintéticos, entrena, guarda `models/*` y figuras de evaluació
 ## Ética y límites
 
 Ver `docs/ethics/radiology-ia-etica.md` y el JSON generado `models/clinical_analysis.json` tras el bootstrap.
+
+## Prototipo CNN (PyTorch) — Deep Learning en imágenes
+
+Refuerzo del encargo **sin sustituir** el baseline sklearn embebido en la API:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/ml/radiology-classifier"
+source .venv/bin/activate   # o crea venv como en «Arranque rápido»
+python3 -m pip install -r requirements-cnn.txt
+python3 scripts/train_cnn_baseline.py --epochs 12
+```
+
+Genera `models/cnn_baseline.pt`, `cnn_evaluation.json` y `cnn_confusion_matrix.png`. Detalle de decisión: `docs/adr/0004-radiology-cnn-prototype-pytorch.md`.

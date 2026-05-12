@@ -87,6 +87,7 @@ Tras sincronizar, `resolve_radiology_dataset_dir()` elige automáticamente `data
 | `ml/radiology-classifier/scripts/sync_chest_xray_from_downloads.py` | Montar `data/cxr_local` desde Downloads |
 | `ml/radiology-classifier/scripts/generate_synthetic_radiology.py` | Datos sintéticos y COVID auxiliar |
 | `ml/radiology-classifier/scripts/bootstrap_model.py` | Pipeline offline completo |
+| `ml/radiology-classifier/scripts/train_cnn_baseline.py` | CNN PyTorch (opcional, refuerzo DL) |
 | `services/api/app/radiology.py` | Router FastAPI |
 | `services/frontend/public/radiology.html` | UI |
 
@@ -96,3 +97,17 @@ Tras sincronizar, `resolve_radiology_dataset_dir()` elige automáticamente `data
 - **Ética y privacidad:** [`docs/ethics/radiology-ia-etica.md`](../ethics/radiology-ia-etica.md)
 - **Integración con estudios / MinIO:** [`docs/architecture/radiology-integration.md`](../architecture/radiology-integration.md)
 - **Diario IA (obligatorio):** [`docs/ai-dev-diary/2026-05-radiografia-ia.md`](../ai-dev-diary/2026-05-radiografia-ia.md)
+
+## 11. Prototipo Deep Learning (PyTorch), opcional
+
+Para reforzar el apartado de **redes neuronales convolucionales** sin cambiar el despliegue por defecto de la API:
+
+| Artefacto | Descripción |
+|-----------|-------------|
+| `training/cnn_baseline_torch.py` | CNN pequeña (1 canal), entrenamiento AdamW, validación estratificada. |
+| `scripts/train_cnn_baseline.py` | Entrada CLI; requiere `pip install -r requirements-cnn.txt`. |
+| `models/cnn_baseline.pt` | `state_dict` + metadatos (no versionar en Git; carpeta `models/` ignorada). |
+| `models/cnn_evaluation.json` | Accuracy, matriz de confusión, `classification_report`. |
+| `models/cnn_confusion_matrix.png` | Figura matplotlib. |
+
+Justificación y alcance: [`docs/adr/0004-radiology-cnn-prototype-pytorch.md`](../adr/0004-radiology-cnn-prototype-pytorch.md). El baseline sklearn sigue en [`docs/adr/0003-radiology-sklearn-baseline.md`](../adr/0003-radiology-sklearn-baseline.md).

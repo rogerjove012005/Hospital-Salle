@@ -44,8 +44,10 @@ Los datos de entrenamiento por defecto son **sintéticos** (script), con pesos d
 | CNN pequeña desde cero | Riesgo de overfitting extremo con N pequeño sin transfer. |
 | **SVM** sobre features PCA | Menos flexible que MLP en fronteras no lineales complejas. |
 
+Para CNN opcional (PyTorch) y memoria del encargo, ver **ADR 0004** enlazado desde [`docs/specs/radiology-classifier.md`](docs/specs/radiology-classifier.md) (sección prototipo DL).
+
 ## Próximos pasos sugeridos
 
-1. Congelar baseline y métricas en memoria técnica.
-2. Rama experimental `feature/rx-cnn` con PyTorch + EfficientNet-B0 y mismo contrato API.
-3. Validação externa y sesgo por sexo/edad si se dispone de metadatos.
+1. Congelar baseline sklearn y métricas en memoria técnica.
+2. Prototipo CNN PyTorch ya disponible (`train_cnn_baseline.py`); siguiente escalón: transfer learning (ResNet/EfficientNet) o endpoint API opcional.
+3. Validación externa y sesgo por sexo/edad si se dispone de metadatos.

@@ -1,6 +1,6 @@
 # laSalle Health Center — Sistema Inteligente de Soporte Hospitalario
 
-Plataforma hospitalaria académica que combina una **API REST con autenticación por roles**, un **portal web** para pacientes y personal clínico, y un **clasificador de radiografías** basado en redes neuronales convolucionales (CNN). Todo corre containerizado con Docker Compose.
+Plataforma hospitalaria que combina una **API REST con autenticación por roles**, un **portal web** para pacientes y personal clínico, y un **clasificador de radiografías** basado en redes neuronales convolucionales (CNN). Todo corre containerizado con Docker Compose.
 
 ---
 

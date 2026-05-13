@@ -1,107 +1,223 @@
-# Sistema Inteligente de Soporte Hospitalario
+# laSalle Health Center — Sistema Inteligente de Soporte Hospitalario
 
-Repositorio base para estructurar el proyecto del **laSalle Health Center** (IA + Big Data + automatización + visualización + despliegue containerizado).
+Plataforma hospitalaria académica que combina una **API REST con autenticación por roles**, un **portal web** para pacientes y personal clínico, y un **clasificador de radiografías** basado en redes neuronales convolucionales (CNN). Todo corre containerizado con Docker Compose.
 
-## Estructura de carpetas (GitHub)
+---
 
-> Objetivo: que el repo sea **fácil de navegar** por “features” del enunciado (modelo IA, pipeline, automatización, dashboard, infraestructura y documentación).
+## Qué hace el sistema
+
+| Módulo | Descripción |
+|--------|-------------|
+| **Portal web** | Login, registro y gestión de expedientes para pacientes, médicos y administradores |
+| **API REST** | FastAPI con JWT, control de roles (admin / médico / paciente) y acceso a BBDD |
+| **Clasificador IA** | CNN (EfficientNetB4 + TensorFlow) que clasifica radiografías de tórax en: **Sana**, **Neumonía** o **COVID-19** |
+| **Almacenamiento** | MinIO (compatible S3) para imágenes de radiografías |
+| **Base de datos** | PostgreSQL con esquema de pacientes, médicos y estudios radiológicos |
+| **Correo (dev)** | Mailpit — bandeja de pruebas para recuperación de contraseña sin SMTP real |
+
+---
+
+## Requisitos previos
+
+- **Docker Desktop** (o Docker Engine + Compose v2) — [descargar](https://docs.docker.com/get-docker/)
+- **Python 3.10+** — solo si quieres ejecutar el módulo ML de forma local
+
+Comprueba que Docker está activo:
+
+```bash
+docker --version
+docker compose version
+```
+
+---
+
+## Inicio rápido — plataforma web (5 minutos)
+
+```bash
+# 1. Clona el repositorio
+git clone <url-del-repo>
+cd Hospital-Salle
+
+# 2. Copia el fichero de configuración (los valores por defecto funcionan en local)
+cp infra/docker/.env.example infra/docker/.env
+
+# 3. Levanta todos los servicios
+cd infra/docker
+docker compose --env-file .env up --build
+```
+
+Espera a que aparezca `api | Application startup complete.` en los logs (suele tardar ~60 s la primera vez mientras descarga imágenes y compila).
+
+### URLs de acceso
+
+| Servicio | URL | Descripción |
+|----------|-----|-------------|
+| **Portal web** | http://localhost:3000 | Interfaz principal |
+| **API docs** | http://localhost:8000/docs | Swagger UI interactivo |
+| **Mailpit** (correo dev) | http://localhost:8025 | Bandeja de pruebas para "olvidé contraseña" |
+| **pgAdmin** | http://localhost:5050 | Administración visual de PostgreSQL |
+| **MinIO** | http://localhost:9001 | Consola de almacenamiento de objetos |
+
+### Credenciales por defecto
+
+| Recurso | Usuario / Email | Contraseña |
+|---------|-----------------|------------|
+| Portal / API (admin) | `rogerjove012005@gmail.com` | `hospital` |
+| pgAdmin | `admin@admin.com` | `admin` |
+| MinIO | `minioadmin` | `minioadmin` |
+
+> Para conectar pgAdmin al servidor PostgreSQL usa host `postgres`, puerto `5432`, usuario `hospital`, contraseña `hospital`, BBDD `hospital`.
+
+### Parar los servicios
+
+```bash
+docker compose --env-file .env down          # para y elimina contenedores
+docker compose --env-file .env down -v       # también borra los volúmenes (datos)
+```
+
+---
+
+## Roles del sistema
+
+El portal distingue tres perfiles. El administrador puede crear usuarios; pacientes y médicos pueden auto-registrarse.
+
+| Rol | Qué puede hacer |
+|-----|-----------------|
+| `admin` | Ver y crear usuarios, listar todos los pacientes y estudios |
+| `medico` | Ver todos los pacientes y sus estudios radiológicos |
+| `paciente` | Ver su propio expediente y sus estudios |
+
+---
+
+## Módulo de IA — Clasificador de radiografías
+
+El módulo ML funciona de forma independiente al Docker; se ejecuta en local con Python.
+
+### Instalación
+
+```bash
+cd ml/radiology-classifier
+pip install -r requirements.txt
+```
+
+> En macOS usa `pip3` si `pip` apunta a Python 2.
+
+### Ejecutar el pipeline completo
+
+```bash
+# Desde ml/radiology-classifier/
+python run_pipeline.py
+```
+
+El pipeline realiza 5 pasos automáticamente:
+
+1. **Dataset** — genera imágenes sintéticas (100 por clase: NORMAL, NEUMONÍA, COVID-19)
+2. **Preprocesado** — redimensiona a 224×224, normaliza y aplica data augmentation
+3. **Entrenamiento** — CNN con EfficientNetB4 preentrenada en ImageNet
+4. **Evaluación** — matriz de confusión, curvas ROC, métricas por clase
+5. **Análisis clínico** — informe con sensibilidad/especificidad y falsos negativos críticos
+
+### Archivos generados tras el pipeline
+
+```
+ml/radiology-classifier/
+├── data/synthetic/              # imágenes sintéticas (NORMAL / NEUMONIA / COVID-19)
+├── data/dataset_samples.png     # muestras visuales del dataset
+├── data/augmentation_examples.png
+└── ml/radiology-classifier/models/
+    ├── model_final.pkl          # modelo entrenado
+    ├── training_history.png     # curvas de entrenamiento
+    ├── confusion_matrix.png     # matriz de confusión
+    ├── roc_curves.png           # curvas ROC por clase
+    ├── evaluation_report.json   # métricas numéricas
+    └── clinical_analysis.json   # informe clínico
+```
+
+---
+
+## Estructura del proyecto
 
 ```
 .
-├── Enunciado-Hospital.pdf
-├── README.md
-├── automation/
-│   ├── alerts/                 # alertas ante eventos/fallos (simuladas: log/email/dashboard)
-│   ├── reports/                # generación automática de informes
-│   └── file-mover/             # organización/movimiento de ficheros (ingesta, archivado, etc.)
-├── data/
-│   ├── external/               # datasets descargados (idealmente NO versionar; documentar origen)
-│   ├── raw/                    # datos “en crudo” (CSV/JSON/logs/imágenes)
-│   ├── staging/                # datos intermedios tras validación/normalización
-│   ├── processed/              # datos transformados listos para consumo
-│   ├── warehouse/              # salida estilo DWH/lakehouse (tablas/particiones)
-│   └── models/                 # artefactos de modelos (pesos, métricas, configs)
-├── docs/
-│   ├── specs/                  # SDD: especificaciones por módulo (inputs/outputs/AC)
-│   ├── architecture/           # diagramas + explicación del flujo end-to-end
-│   ├── adr/                    # decisiones técnicas (Architecture Decision Records)
-│   ├── ethics/                 # análisis ético/legal (sesgos, privacidad, riesgos, límites)
-│   ├── ai-dev-diary/           # diario de desarrollo con IA (prompts, iteraciones, reflexiones)
-│   └── slides/                 # presentación (10–15 min)
 ├── infra/
-│   ├── docker/                 # docker-compose, Dockerfiles, .env.example
-│   ├── db/                     # init scripts / esquemas / seeds para bases de datos
-│   └── observability/          # logging/monitorización (configuración básica)
+│   ├── docker/
+│   │   ├── docker-compose.yml  # orquestación de todos los servicios
+│   │   └── .env.example        # variables de entorno (copia a .env)
+│   └── db/
+│       └── 01-init.sql         # esquema inicial de PostgreSQL
 ├── ml/
-│   └── radiology-classifier/   # módulo DL radiografías (Sana/Neumonía/COVID-19)
-│       ├── training/           # entrenamiento (scripts, dataloaders, métricas, confusión)
-│       ├── inference/          # inferencia/serving (batch u online)
-│       ├── notebooks/          # exploración (EDA imágenes, pruebas rápidas)
-│       └── configs/            # configs (hiperparámetros, rutas, labels)
-├── notebooks/                  # notebooks generales (pipeline, análisis, prototipos)
-├── pipelines/
-│   ├── ingestion/              # ingesta (watch folder, API simulada, conectores)
-│   ├── processing/             # procesamiento escalable (Spark/Dask/Beam)
-│   ├── quality/                # validación de calidad (duplicados, nulos, corruptos)
-│   └── orchestration/          # orquestación (schedules, DAGs, triggers)
-├── scripts/                    # utilidades de dev (setup, lint, dataset download)
+│   └── radiology-classifier/
+│       ├── run_pipeline.py     # punto de entrada del pipeline ML
+│       ├── training/           # entrenamiento, preprocesado, evaluación
+│       ├── inference/          # análisis clínico post-evaluación
+│       ├── data/               # dataset manager e imágenes sintéticas
+│       ├── configs/            # hiperparámetros y configuración
+│       └── requirements.txt
 ├── services/
-│   ├── api/                    # API REST (exponer datos procesados + predicciones)
-│   └── dashboard/              # dashboard (métricas, gráficos, estado del pipeline)
-└── tests/                      # tests unit/integration (pipeline, API, ML)
+│   ├── api/                    # FastAPI (auth, pacientes, estudios)
+│   │   └── app/
+│   │       ├── main.py         # rutas y startup
+│   │       ├── auth.py         # JWT, roles, registro, reset password
+│   │       ├── db.py           # conexión SQLAlchemy
+│   │       └── security.py     # hashing de contraseñas
+│   └── frontend/               # portal web estático (nginx)
+│       └── public/
+│           ├── index.html      # login / registro
+│           ├── landing.html    # dashboard del usuario autenticado
+│           └── app.js          # lógica del portal
+├── docs/                       # ADRs, ética, diario IA, specs
+├── automation/                 # alertas, informes, movimiento de ficheros
+├── pipelines/                  # ingestión, procesado, calidad, orquestación
+└── data/                       # datos raw / staging / processed / warehouse
 ```
 
-## Cómo se relaciona con los “features” del enunciado
+---
 
-- **Modelo de IA (clínico)**: `ml/` (especialmente `ml/radiology-classifier/`).
-- **Procesamiento de datos / Big Data (pipeline)**: `pipelines/` + `data/`.
-- **Automatización**: `automation/` (informes, alertas, movimiento de ficheros).
-- **Visualización**: `services/dashboard/` + (opcional) informes en `automation/reports/`.
-- **Infra Big Data / despliegue**: `infra/docker/` (Docker + Compose, volúmenes, env).
-- **Monitorización y calidad**: `infra/observability/` + `pipelines/quality/`.
-- **SDD + diario IA (entregables)**: `docs/specs/` + `docs/ai-dev-diary/`.
-- **Memoria técnica / ética-legal / justificaciones**: `docs/architecture/`, `docs/adr/`, `docs/ethics/`.
+## Variables de entorno relevantes
 
-## Convención recomendada para GitHub
+Todas están en `infra/docker/.env` (copia de `.env.example`). Las más importantes:
 
-- Cada módulo importante tiene su **SPEC** antes de código:
-  - `docs/specs/<modulo>.md` con:
-    - descripción funcional
-    - inputs/outputs
-    - restricciones técnicas/negocio
-    - criterios de aceptación
-- Cada decisión relevante queda registrada como ADR:
-  - `docs/adr/0001-<decision>.md`
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `ADMIN_EMAIL` | `rogerjove012005@gmail.com` | Email del admin inicial |
+| `ADMIN_PASSWORD` | `hospital` | Contraseña del admin inicial |
+| `JWT_SECRET` | `dev-only-change-me` | Secreto para firmar tokens JWT (**cambiar en producción**) |
+| `POSTGRES_PASSWORD` | `hospital` | Contraseña de PostgreSQL |
+| `SMTP_HOST` | `mailpit` | Servidor de correo (en dev usa Mailpit) |
+| `FRONTEND_PORT` | `3000` | Puerto del portal web |
+| `API_PORT` | `8000` | Puerto de la API |
 
-## Datos (CSV)
+Para usar Gmail en lugar de Mailpit, edita `.env`:
 
-El fichero `hospital_dataset.xlsx` (proyecto) puede convertirse a CSV (por defecto se escribe bajo `data/raw/`, carpetas ignoradas por Git según `.gitignore`):
-
-```bash
-python3 scripts/xlsx_to_csv.py hospital_dataset.xlsx data/raw/hospital_dataset.csv
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu_correo@gmail.com
+SMTP_PASSWORD=contraseña_de_aplicación
+SMTP_USE_STARTTLS=1
 ```
 
-Requisitos: `pip install pandas openpyxl`.
+---
 
-## Ejecución (placeholder)
+## API — Endpoints principales
 
-Cuando añadáis los contenedores, la idea es poder levantarlo con un comando:
+La documentación interactiva completa está en http://localhost:8000/docs
 
-```bash
-cd infra/docker
-docker compose --env-file .env.example up --build
-```
+| Método | Ruta | Acceso | Descripción |
+|--------|------|--------|-------------|
+| `GET` | `/health` | público | Estado de la API |
+| `POST` | `/auth/login` | público | Login → devuelve JWT |
+| `POST` | `/auth/register` | público | Auto-registro (paciente/médico) |
+| `POST` | `/auth/forgot-password` | público | Solicitar reset de contraseña |
+| `GET` | `/auth/me` | autenticado | Perfil del usuario actual |
+| `GET` | `/patients` | admin, médico | Lista de pacientes |
+| `GET` | `/patients/me` | paciente | Mi expediente |
+| `GET` | `/studies` | admin, médico | Todos los estudios radiológicos |
+| `GET` | `/studies/me` | paciente | Mis estudios |
+| `POST` | `/admin/users` | admin | Crear usuario manualmente |
 
-Colocad el `docker-compose.yml` y los Dockerfiles en `infra/docker/` y documentad aquí:
+---
 
-- Servicios esperados (ejemplo):
-  - base de datos estructurada (p. ej. PostgreSQL)
-  - almacenamiento objetos (p. ej. MinIO/S3) para imágenes
-  - procesamiento (Spark/Dask)
-  - API (FastAPI/Flask)
-  - dashboard (Streamlit/Grafana/etc.)
+## Aviso
 
-## Notas
-
-- `data/` contiene carpetas para datos, pero **no es recomendable** versionar datasets pesados en Git. Mejor: documentar fuentes en `docs/` y usar `scripts/` para descargarlos/prepararlos.
-
+> Proyecto académico desarrollado en La Salle – Universitat Ramon Llull. Los datos son sintéticos o públicos y no tienen valor clínico real. El modelo de IA **no reemplaza el diagnóstico médico profesional**.

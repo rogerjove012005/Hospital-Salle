@@ -20,8 +20,8 @@ def test_row_fingerprint_stable():
     fp2 = _row_fingerprint({"a": "1", "b": "2"})
     assert fp1 == fp2
     data = json.loads(fp1)
-    assert ("a", "1") in data
-    assert ("b", "2") in data
+    assert ["a", "1"] in data
+    assert ["b", "2"] in data
 
 
 def test_row_fingerprint_empty_values():

@@ -161,7 +161,7 @@ class PipelineEventCreate(BaseModel):
 
 
 def _row_fingerprint(row: dict[str, str]) -> str:
-    normalized = tuple(sorted((k, (v or "").strip()) for k in sorted(row.keys())))
+    normalized = tuple(sorted((k, (row[k] or "").strip()) for k in sorted(row.keys())))
     return json.dumps(normalized, ensure_ascii=False, sort_keys=True)
 
 

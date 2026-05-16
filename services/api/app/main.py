@@ -39,12 +39,14 @@ from .dashboard_imports import (
     CsvImportResult,
     CsvPreviewResult,
     DataQualityIssueOut,
+    DataQualitySummaryOut,
     PipelineEventCreate,
     PipelineEventOut,
     count_user_csv_imports,
     emit_csv_ingestion_failure,
     export_user_csv_batch,
     get_csv_batch_detail,
+    get_data_quality_summary,
     import_csv_file,
     list_batch_quality_issues,
     list_csv_pipeline_events,
@@ -158,6 +160,56 @@ def health_deps():
         minio_ok = False
 
     return {"postgres": db_ok, "minio": minio_ok}
+
+
+@app.get("/health/observability")
+def health_observability():
+    """
+    Panel ligero de monitorización: dependencias, Spark, lotes CSV y alertas recientes.
+    """
+    deps = health_deps()
+    pipeline = health_pipeline()
+    csv_batches = 0
+    open_pipeline_errors = 0
+    quality_issues = 0
+    try:
+        with engine().connect() as conn:
+            csv_batches = int(
+                conn.execute(text("SELECT COUNT(*)::int FROM csv_import_batches")).scalar_one() or 0
+            )
+            open_pipeline_errors = int(
+                conn.execute(
+                    text(
+                        """
+                        SELECT COUNT(*)::int FROM pipeline_events
+                        WHERE status IN ('error', 'failed', 'critical')
+                          AND created_at > NOW() - INTERVAL '7 days'
+                        """
+                    )
+                ).scalar_one()
+                or 0
+            )
+            quality_issues = int(
+                conn.execute(text("SELECT COUNT(*)::int FROM data_quality_issues")).scalar_one() or 0
+            )
+    except Exception as exc:
+        return {
+            "status": "degraded",
+            "dependencies": deps,
+            "pipeline": pipeline,
+            "detail": str(exc)[:300],
+        }
+    status = "ok"
+    if not deps.get("postgres") or pipeline.get("status") == "degraded":
+        status = "degraded"
+    return {
+        "status": status,
+        "dependencies": deps,
+        "pipeline": pipeline,
+        "csv_import_batches": csv_batches,
+        "pipeline_errors_7d": open_pipeline_errors,
+        "data_quality_issues_total": quality_issues,
+    }
 
 
 @app.on_event("startup")
@@ -359,6 +411,16 @@ def operational_alerts(
 @app.get("/reports/hospital")
 def hospital_operational_report(_user: UserOut = Depends(require_roles("admin", "medico"))):
     return hospital_report_response(_user)
+
+
+@app.get("/admin/imports/quality-summary", response_model=DataQualitySummaryOut)
+def admin_data_quality_summary(
+    recent_limit: int = 15,
+    _admin: UserOut = Depends(require_roles("admin")),
+):
+    if recent_limit < 1 or recent_limit > 50:
+        raise HTTPException(status_code=400, detail="recent_limit debe estar entre 1 y 50")
+    return get_data_quality_summary(recent_limit=recent_limit)
 
 
 @app.get("/admin/imports/pipeline-events", response_model=list[PipelineEventOut])

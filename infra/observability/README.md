@@ -23,6 +23,7 @@ docker compose -f infra/docker/docker-compose.yml logs --tail=100 csv-ingest-wor
 |----------|------|-----|
 | `GET /health` | No | Liveness del API |
 | `GET /health/pipeline` | No | Último agregado Spark |
+| `GET /health/observability` | No | Dependencias + contadores CSV/calidad/errores 7d |
 | `GET /dashboard/summary` | JWT | KPIs portal |
 | `GET /alerts` | JWT admin/medico | Incidencias |
 

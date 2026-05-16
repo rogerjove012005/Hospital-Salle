@@ -2641,3 +2641,39 @@ code {
     display: none;
   }
 }
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.contact-card__value {
+  margin: var(--space-3) 0 var(--space-2);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.contact-card__value a {
+  color: var(--brand-dark);
+  text-decoration: none;
+}
+
+.contact-card__value a:hover {
+  text-decoration: underline;
+}
+
+.contact-form-card {
+  grid-column: 1 / -1;
+}
+
+.contact-form {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 520px;
+}
+
+.contact-textarea {
+  resize: vertical;
+  min-height: 120px;
+}

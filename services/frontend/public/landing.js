@@ -149,6 +149,17 @@ function deriveInitials(name) {
 function applyRoleSpecifics(me) {
   const role = me.role;
 
+  const recordsLink = document.getElementById("actionRecordsLink");
+  if (recordsLink) {
+    if (role === "paciente") {
+      recordsLink.href = "#";
+      recordsLink.setAttribute("data-action", "records");
+    } else if (role === "medico" || role === "admin") {
+      recordsLink.href = "/patients.html";
+      recordsLink.removeAttribute("data-action");
+    }
+  }
+
   if (role === "paciente") {
     chipRoleEl.textContent = ROLE_LABELS.paciente;
     chipRoleEl.classList.add("chip--brand");

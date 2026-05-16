@@ -1,6 +1,6 @@
 import os
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from minio import Minio
 from sqlalchemy import text
@@ -75,6 +75,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(radiology_router)
+
 
 def _minio_client() -> Minio:
     endpoint = os.environ["MINIO_ENDPOINT"].replace("http://", "").replace("https://", "")
@@ -87,6 +89,53 @@ def _minio_client() -> Minio:
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/health/pipeline")
+def health_pipeline():
+    """
+    Estado ligero del último job PySpark de agregados (sin autenticación, para monitorización básica).
+    """
+    try:
+        with engine().connect() as conn:
+            row = conn.execute(
+                text(
+                    """
+                    SELECT computed_at, total_rows::bigint AS total_rows,
+                           batches_with_rows::int AS batches_with_rows
+                    FROM csv_spark_run_summary
+                    WHERE id = 1
+                    """
+                ),
+            ).mappings().fetchone()
+        if not row:
+            return {"status": "unknown", "spark_aggregates": None}
+        r = dict(row)
+        ca = r.get("computed_at")
+        if ca is not None and hasattr(ca, "isoformat"):
+            ca_out = ca.isoformat()
+        else:
+            ca_out = str(ca) if ca is not None else None
+        return {
+            "status": "ok",
+            "spark_aggregates": {
+                "computed_at": ca_out,
+                "total_rows": int(r.get("total_rows") or 0),
+                "batches_with_rows": int(r.get("batches_with_rows") or 0),
+            },
+        }
+    except Exception as exc:
+        return {"status": "degraded", "detail": str(exc)[:400]}
+
+
+@app.get("/stats/csv-aggregates", response_model=CsvSparkAggregatesOut)
+def stats_csv_aggregates(top: int = 15, user: UserOut = Depends(get_current_user)):
+    """
+    Métricas del último job PySpark sobre datos CSV ingestados (ver tablas csv_spark_*).
+    """
+    if top < 1 or top > 100:
+        raise HTTPException(status_code=400, detail="top debe estar entre 1 y 100")
+    return get_csv_spark_aggregates(user, top=top)
 
 
 @app.get("/health/deps")

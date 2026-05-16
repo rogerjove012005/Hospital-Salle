@@ -7,3 +7,8 @@ passlib[bcrypt]
 python-jose[cryptography]
 bcrypt<4.1
 email-validator
+python-multipart
+numpy
+pillow
+scikit-learn
+joblib

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Centro de control — laSalle Health Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=20260516i" />
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  </head>
+  <body class="app-body" data-portal-page="analytics" data-portal-title="Centro de control">
+    <main class="app-main" id="analyticsTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <span class="portal-card__badge">Visualización operativa</span>
+          <h1 class="clinic-header__title">Centro de control hospitalario</h1>
+          <p class="clinic-header__sub" id="analyticsSub">Métricas, alertas e informes del sistema.</p>
+          <div class="clinic-header__row" style="margin-top: var(--space-4)">
+            <button type="button" class="clinic-btn clinic-btn--primary" id="btnOpenReport">
+              Generar informe HTML
+            </button>
+            <button type="button" class="clinic-btn clinic-btn--ghost" id="btnRefreshAnalytics">Actualizar</button>
+          </div>
+        </header>
+      </article>
+
+      <section class="clinic-stats" id="analyticsKpis" aria-label="Indicadores"></section>
+
+      <div class="clinic-grid-2 analytics-charts" id="chartsClinical" hidden>
+        <article class="portal-card clinic-card dash-card">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Filas CSV por lote (Spark)</h2>
+            <p class="dash-card__sub">Último job de agregación</p>
+          </header>
+          <div class="clinic-card__body chart-wrap">
+            <canvas id="chartSpark" height="220" aria-label="Gráfico lotes CSV"></canvas>
+          </div>
+        </article>
+        <article class="portal-card clinic-card dash-card">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Precisión por clase (RX)</h2>
+            <p class="dash-card__sub">F1-score en conjunto de prueba</p>
+          </header>
+          <div class="clinic-card__body chart-wrap">
+            <canvas id="chartRxF1" height="220" aria-label="Gráfico radiología"></canvas>
+          </div>
+        </article>
+      </div>
+
+      <article class="portal-card clinic-card dash-card">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">Alertas operativas</h2>
+          <p class="dash-card__sub">Eventos de pipeline y calidad de datos</p>
+        </header>
+        <div class="clinic-card__body">
+          <ul class="alerts-list" id="alertsList"></ul>
+        </div>
+      </article>
+
+      <p id="status" class="clinic-alert portal-status" role="status"></p>
+    </main>
+    <script src="/portal.js"></script>
+    <script src="/analytics.js"></script>
+  </body>
+</html>

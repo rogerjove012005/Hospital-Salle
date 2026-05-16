@@ -1,189 +1,107 @@
-function apiBase() {
-  const raw = window.API_BASE_URL || "/api";
-  return String(raw).replace(/\/+$/, "");
-}
-
-const API_BASE = apiBase();
-
 const qs = (s) => document.querySelector(s);
-const qsa = (s) => document.querySelectorAll(s);
 
 const userNameEl = qs("#userName");
 const avatarInitialsEl = qs("#avatarInitials");
 const dashSubEl = qs("#dashSub");
 const chipRoleEl = qs("#chipRole");
 const chipIdEl = qs("#chipId");
-const statusEl = qs("#status");
+const actionsSub = qs("#actionsSub");
+const actionsList = qs("#actionsList");
+const loginMeta = qs("#loginMeta");
 
 const mNextAppt = qs("#mNextAppt");
 const mNextApptHint = qs("#mNextApptHint");
 const mSecondaryLabel = qs("#mSecondaryLabel");
 const mSecondaryValue = qs("#mSecondaryValue");
 const mSecondaryHint = qs("#mSecondaryHint");
-const mNotif = qs("#mNotif");
+const mTertiaryLabel = qs("#mTertiaryLabel");
+const mTertiaryValue = qs("#mTertiaryValue");
+const mTertiaryHint = qs("#mTertiaryHint");
 
-const actionsSub = qs("#actionsSub");
-const actionAppointmentsTitle = qs("#actionAppointmentsTitle");
-const actionRecordsTitle = qs("#actionRecordsTitle");
-const actionsList = qs("#actionsList");
-
-const loginMeta = qs("#loginMeta");
-
-const ROLE_LABELS = {
-  paciente: "Paciente",
-  medico: "Médico / personal clínico",
-  admin: "Administración",
-};
-
-function setStatus(message, kind = "neutral") {
-  if (!statusEl) return;
-  statusEl.textContent = message || "";
-  statusEl.classList.remove("ok", "error");
-  if (kind === "ok") statusEl.classList.add("ok");
-  if (kind === "error") statusEl.classList.add("error");
-}
-
-function getToken() {
-  return (
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token") ||
-    null
-  );
-}
-
-function setToken(token) {
-  if (!token) {
-    localStorage.removeItem("access_token");
-    sessionStorage.removeItem("access_token");
-    return;
-  }
-  localStorage.setItem("access_token", token);
-}
-
-function formatApiDetail(detail) {
-  if (!detail) return "Error desconocido";
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail)) {
-    return detail
-      .map((d) => {
-        const loc = Array.isArray(d.loc) ? d.loc.filter((x) => x !== "body").join(".") : "";
-        const msg = d.msg || "";
-        return loc ? `${loc}: ${msg}` : msg;
-      })
-      .filter(Boolean)
-      .join("\n");
-  }
-  return JSON.stringify(detail);
-}
-
-async function api(path, opts = {}) {
-  const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
-  const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const url = `${API_BASE}${path}`;
-  let res;
-  try {
-    res = await fetch(url, Object.assign({}, opts, { headers }));
-  } catch (e) {
-    const name = e && e.name ? e.name : "Error";
-    const msg = e && e.message ? e.message : String(e);
-    throw new Error(`Red: ${name}: ${msg} (url=${url})`);
-  }
-  const text = await res.text();
-  let body = null;
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = text;
-  }
-  if (!res.ok) {
-    const msg =
-      typeof body === "string"
-        ? body
-        : body && Object.prototype.hasOwnProperty.call(body, "detail")
-          ? formatApiDetail(body.detail)
-          : JSON.stringify(body);
-    throw new Error(`HTTP ${res.status}: ${msg} (url=${url})`);
-  }
-  return body;
-}
-
-function redirectToLogin() {
-  window.location.href = "/index.html";
-}
-
-const btnLogout = qs("#btnLogout");
-if (btnLogout) {
-  btnLogout.addEventListener("click", () => {
-    setToken(null);
-    redirectToLogin();
+function renderQuickActions(role) {
+  if (!actionsList) return;
+  const sections = buildNavSections(role);
+  const items = [];
+  sections.forEach((sec) => {
+    sec.items.forEach((item) => {
+      if (!canAccessPage(role, item.id) || item.id === "dashboard") return;
+      const icon = NAV_ICONS[item.id] || "";
+      const featured = item.featured ? " action--featured" : "";
+      items.push(`<li><a class="action${featured}" href="${item.href}">
+        <span class="action__icon" aria-hidden="true">${icon}</span>
+        <span class="action__title">${item.label}</span>
+        <span class="action__chev" aria-hidden="true">›</span>
+      </a></li>`);
+    });
   });
+  actionsList.innerHTML = items.join("");
 }
 
-if (actionsList) {
-  actionsList.addEventListener("click", (e) => {
-    const a = e.target.closest("[data-action]");
-    if (!a) return;
-    e.preventDefault();
-    const action = a.getAttribute("data-action");
-    setStatus(`"${a.querySelector(".action__title")?.textContent || action}" estará disponible próximamente.`, "ok");
-  });
-}
-
-function deriveDisplayName(me) {
-  const email = (me && me.email) || "";
-  const local = email.includes("@") ? email.split("@")[0] : email;
-  if (!local) return "—";
-  return local.charAt(0).toUpperCase() + local.slice(1);
-}
-
-function deriveInitials(name) {
-  if (!name || name === "—") return "·";
-  const cleaned = String(name).replace(/[^A-Za-z\u00C0-\u017F]+/g, " ").trim();
-  if (!cleaned) return "·";
-  const parts = cleaned.split(/\s+/).slice(0, 2);
-  return parts.map((p) => p.charAt(0).toUpperCase()).join("") || cleaned.charAt(0).toUpperCase();
-}
-
-function applyRoleSpecifics(me) {
+function applyRoleDashboard(me, detail) {
   const role = me.role;
+  const display = deriveDisplayName(me, detail);
+
+  userNameEl.textContent = display;
+  if (avatarInitialsEl) avatarInitialsEl.textContent = deriveInitials(display);
+  chipRoleEl.textContent = ROLE_LABELS[role] || role;
+  chipRoleEl.classList.add("chip--brand");
+  chipIdEl.textContent = roleIdChip(me);
+
+  dashSubEl.textContent = me.email ? `${me.email} · ${ROLE_LABELS[role]}` : "Sesión activa";
+
+  const rxSpotlight = qs("#rxSpotlight");
+  if (rxSpotlight) rxSpotlight.hidden = !(role === "medico" || role === "admin");
 
   if (role === "paciente") {
-    chipRoleEl.textContent = ROLE_LABELS.paciente;
-    chipRoleEl.classList.add("chip--brand");
-    chipIdEl.textContent = me.patient_id ? `ID paciente · ${me.patient_id}` : "Sin ID asignado";
-    actionsSub.textContent = "Acciones disponibles para pacientes.";
-    actionAppointmentsTitle.textContent = "Mis citas";
-    actionRecordsTitle.textContent = "Mi expediente";
+    actionsSub.textContent = "Portal del paciente — consulte citas, expediente y contacto.";
     mSecondaryLabel.textContent = "Última visita";
-    mSecondaryValue.textContent = "—";
-    mSecondaryHint.textContent = "Aún sin registros clínicos.";
+    mSecondaryHint.textContent = "Historial clínico de demostración.";
+    mTertiaryLabel.textContent = "Estudios en expediente";
+    mTertiaryHint.textContent = "Pruebas diagnósticas registradas.";
+    mNextAppt.textContent = "11:00";
+    mNextApptHint.textContent = "Consulta de seguimiento · hoy";
     return;
   }
 
   if (role === "medico") {
-    chipRoleEl.textContent = ROLE_LABELS.medico;
-    chipRoleEl.classList.add("chip--brand");
-    chipIdEl.textContent = me.medico_id ? `ID médico · ${me.medico_id}` : "Sin ID asignado";
-    actionsSub.textContent = "Acciones disponibles para personal clínico.";
-    actionAppointmentsTitle.textContent = "Agenda del día";
-    actionRecordsTitle.textContent = "Pacientes asignados";
-    mSecondaryLabel.textContent = "Pacientes asignados";
-    mSecondaryValue.textContent = "—";
-    mSecondaryHint.textContent = "Sin información agregada todavía.";
+    actionsSub.textContent = "Portal clínico — agenda, pacientes y herramientas de apoyo.";
+    mSecondaryLabel.textContent = "Consultas hoy";
+    mSecondaryValue.textContent = "4";
+    mSecondaryHint.textContent = "Vista orientativa (demo).";
+    mTertiaryLabel.textContent = "Pacientes en cartera";
+    mTertiaryHint.textContent = "Listado desde el hospital.";
+    mNextAppt.textContent = "09:00";
+    mNextApptHint.textContent = "Primera consulta del día";
     return;
   }
 
-  chipRoleEl.textContent = ROLE_LABELS.admin;
-  chipRoleEl.classList.add("chip--brand");
-  chipIdEl.textContent = "Cuenta administradora";
-  actionsSub.textContent = "Acciones disponibles para administración.";
-  actionAppointmentsTitle.textContent = "Calendario operativo";
-  actionRecordsTitle.textContent = "Gestión de usuarios";
-  mSecondaryLabel.textContent = "Usuarios activos";
-  mSecondaryValue.textContent = "—";
-  mSecondaryHint.textContent = "Disponible al conectar el endpoint.";
+  actionsSub.textContent = "Portal de administración — operaciones y directorio.";
+  mSecondaryLabel.textContent = "Operaciones activas";
+  mSecondaryValue.textContent = "CSV + RX";
+  mSecondaryHint.textContent = "Servicios hospitalarios conectados.";
+  mTertiaryLabel.textContent = "Directorio";
+  mTertiaryHint.textContent = "Pacientes y personal.";
+  mNextAppt.textContent = "—";
+  mNextApptHint.textContent = "Sin agenda personal";
+}
+
+async function loadDashboardMetrics(me) {
+  try {
+    if (me.role === "paciente") {
+      const studies = await apiJson("/studies/me");
+      const count = Array.isArray(studies) ? studies.length : 0;
+      if (mTertiaryValue) mTertiaryValue.textContent = String(count);
+      if (mSecondaryValue) mSecondaryValue.textContent = count ? "Registrada" : "—";
+      return;
+    }
+    if (me.role === "medico" || me.role === "admin") {
+      const patients = await apiJson("/patients");
+      const count = Array.isArray(patients) ? patients.length : 0;
+      if (mTertiaryValue) mTertiaryValue.textContent = String(count);
+    }
+  } catch {
+    if (mTertiaryValue) mTertiaryValue.textContent = "—";
+  }
 }
 
 function setLoginMeta() {
@@ -195,36 +113,18 @@ function setLoginMeta() {
     hour: "2-digit",
     minute: "2-digit",
   });
-  loginMeta.textContent = `Acceso correcto · ${fmt.format(now)}`;
+  if (loginMeta) loginMeta.textContent = `Acceso correcto · ${fmt.format(now)}`;
 }
 
-async function boot() {
-  const token = getToken();
-  if (!token) {
-    redirectToLogin();
-    return;
-  }
+(async function boot() {
+  const ctx = await initPortalApp();
+  if (!ctx || ctx.denied) return;
+  const { me } = ctx;
 
-  try {
-    const me = await api("/auth/me");
-    const display = deriveDisplayName(me);
-    userNameEl.textContent = display;
-    if (avatarInitialsEl) avatarInitialsEl.textContent = deriveInitials(display);
-    dashSubEl.textContent = me.email
-      ? `Sesión activa · ${me.email}`
-      : "Sesión activa.";
-    applyRoleSpecifics(me);
-    setLoginMeta();
-    mNextAppt.textContent = "—";
-    mNextApptHint.textContent = "Sin citas programadas en este momento.";
-    mNotif.textContent = "0";
-    setStatus("");
-  } catch (e) {
-    userNameEl.textContent = "—";
-    dashSubEl.textContent = "No se pudo validar la sesión. Vuelve a identificarte en el acceso al portal.";
-    setStatus(String(e.message || e), "error");
-    setToken(null);
-  }
-}
-
-boot();
+  const detail = await loadProfileDetail(me);
+  applyRoleDashboard(me, detail);
+  renderQuickActions(me.role);
+  setLoginMeta();
+  await loadDashboardMetrics(me);
+  setPageStatus("");
+})();

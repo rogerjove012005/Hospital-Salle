@@ -50,6 +50,11 @@ services:
     build:
       context: ../../services/api
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-hospital}:${POSTGRES_PASSWORD:-hospital}@postgres:5432/${POSTGRES_DB:-hospital}"
       MINIO_ENDPOINT: "http://minio:9000"
@@ -117,6 +122,83 @@ services:
         condition: service_healthy
     ports:
       - "${FRONTEND_PORT:-3000}:80"
+    networks:
+      - hospital_net
+
+  # Feed CSV estático para simular sistema hospitalario externo (requerimiento ingesta / API simulada).
+  mock-hospital-feed:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ../../pipelines/ingestion/samples:/usr/share/nginx/html:ro
+    ports:
+      - "${MOCK_HOSPITAL_FEED_PORT:-8099}:80"
+    networks:
+      - hospital_net
+
+  # Vigilancia de carpeta + descarga periódica de URLs → POST /imports/csv (ingesta automatizada).
+  csv-ingest-worker:
+    build:
+      context: ../../pipelines/ingestion
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      API_BASE_URL: http://api:8000
+      INGEST_LOGIN_EMAIL: ${ADMIN_EMAIL}
+      INGEST_LOGIN_PASSWORD: ${ADMIN_PASSWORD}
+      CSV_PULL_URLS: ${CSV_PULL_URLS:-http://mock-hospital-feed/export.csv}
+      INGEST_POLL_INTERVAL_SECONDS: ${INGEST_POLL_INTERVAL_SECONDS:-90}
+      INGEST_HTTP_TIMEOUT_SECONDS: ${INGEST_HTTP_TIMEOUT_SECONDS:-120}
+      CSV_INBOX: /data/inbox
+      CSV_PROCESSED: /data/processed
+      CSV_FAILED: /data/failed
+      CSV_INGEST_STATE: /data/state/ingest_state.json
+      LOG_LEVEL: ${INGEST_LOG_LEVEL:-INFO}
+    volumes:
+      - ./csv-ingest-mounts/inbox:/data/inbox
+      - ./csv-ingest-mounts/processed:/data/processed
+      - ./csv-ingest-mounts/failed:/data/failed
+      - ./csv-ingest-mounts/state:/data/state
+    depends_on:
+      api:
+        condition: service_healthy
+      mock-hospital-feed:
+        condition: service_started
+    networks:
+      - hospital_net
+
+  # Agregaciones PySpark (modo local) sobre filas ingestadas → Postgres + Parquet.
+  spark-csv-aggregate:
+    build:
+      context: ../../pipelines/processing
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-hospital}
+      POSTGRES_USER: ${POSTGRES_USER:-hospital}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hospital}
+      SPARK_PARQUET_OUT: /data/processed/spark/csv_row_counts
+      SPARK_AGGREGATE_INTERVAL_SECONDS: ${SPARK_AGGREGATE_INTERVAL_SECONDS:-300}
+      SPARK_DRIVER_MEMORY: ${SPARK_DRIVER_MEMORY:-512m}
+    volumes:
+      - ./spark-processed-output:/data/processed/spark
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
     networks:
       - hospital_net
 

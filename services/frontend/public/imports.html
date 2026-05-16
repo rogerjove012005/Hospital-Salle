@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ingesta CSV — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="app-body" data-portal-page="imports" data-portal-title="Ingesta CSV">
+    <main class="app-main" id="importsTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <span class="portal-card__badge">Operaciones hospitalarias</span>
+          <h1 class="clinic-header__title">Ingesta de ficheros CSV</h1>
+          <p class="clinic-header__sub" id="importsSub">Vista previa, importación y auditoría de calidad.</p>
+        </header>
+      </article>
+
+      <div class="clinic-grid-2">
+        <article class="portal-card clinic-card dash-card" id="cardPreview">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">1. Vista previa (sin guardar)</h2>
+            <p class="dash-card__sub">Llama a <code>POST /imports/csv/preview</code> y muestra calidad automática.</p>
+          </header>
+          <div class="auth-form__field" style="margin-bottom: var(--space-4)">
+            <label class="auth-label" for="filePreview">Fichero CSV</label>
+            <input type="file" id="filePreview" accept=".csv,text/csv" class="auth-input" />
+          </div>
+          <div class="clinic-card__body">
+          <button type="button" class="clinic-btn clinic-btn--primary" id="btnPreview">Generar vista previa</button>
+          <pre id="previewOut" class="imports-pre" hidden></pre>
+          </div>
+        </article>
+
+        <article class="portal-card clinic-card dash-card" id="cardImport">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">2. Importar a base de datos</h2>
+            <p class="dash-card__sub">Llama a <code>POST /imports/csv</code> (deduplicación por hash si ya existía).</p>
+          </header>
+          <div class="auth-form__field" style="margin-bottom: var(--space-4)">
+            <label class="auth-label" for="fileImport">Fichero CSV</label>
+            <input type="file" id="fileImport" accept=".csv,text/csv" class="auth-input" />
+          </div>
+          <button type="button" class="clinic-btn clinic-btn--primary" id="btnImport">Importar lote</button>
+          <pre id="importOut" class="imports-pre" hidden></pre>
+        </article>
+      </div>
+
+      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">3. Lotes recientes</h2>
+          <p class="dash-card__sub">
+            <code>GET /imports/csv</code> · Total: <strong id="batchTotal">—</strong>
+            <button type="button" class="dash-hero__logout" id="btnRefresh" style="margin-left: 12px">Actualizar</button>
+          </p>
+        </header>
+        <div style="overflow-x: auto">
+          <table class="imports-table" id="batchTable" aria-label="Lotes importados">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Fichero</th>
+                <th>Filas</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="batchTbody"></tbody>
+          </table>
+        </div>
+        <p id="batchEmpty" class="dash-card__sub" hidden>Sin lotes todavía. Importe un CSV o genere uno de prueba.</p>
+      </article>
+
+      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)" id="cardSpark">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">4. Agregados PySpark (capa analítica)</h2>
+          <p class="dash-card__sub">
+            El contenedor <code>spark-csv-aggregate</code> recalcula métricas sobre
+            <code>csv_import_rows</code>. Vista vía <code>GET /stats/csv-aggregates</code> y salud en
+            <code>GET /health/pipeline</code>.
+            <button type="button" class="dash-hero__logout" id="btnSparkRefresh" style="margin-left: 12px">
+              Actualizar métricas
+            </button>
+          </p>
+        </header>
+        <div id="sparkSummary" class="imports-spark-summary" aria-live="polite"></div>
+        <div style="overflow-x: auto; margin-top: var(--space-4)">
+          <table class="imports-table" id="sparkTopTable" aria-label="Top lotes por filas agregadas">
+            <thead>
+              <tr>
+                <th>Lote (batch_id)</th>
+                <th>Filas</th>
+                <th>Barra relativa</th>
+              </tr>
+            </thead>
+            <tbody id="sparkTopTbody"></tbody>
+          </table>
+        </div>
+        <p id="sparkEmpty" class="dash-card__sub" hidden>Aún no hay agregados (esperar el job Spark o importar CSV).</p>
+      </article>
+
+      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">5. Detalle del lote</h2>
+          <p class="dash-card__sub">
+            <code>GET /imports/csv/{batch_id}</code>,
+            <code>GET /imports/csv/{batch_id}/quality-issues</code> y
+            <code>GET /imports/csv/{batch_id}/export</code>
+          </p>
+        </header>
+        <pre id="detailOut" class="imports-pre">Seleccione un lote en la tabla.</pre>
+      </article>
+
+      <p id="status" class="clinic-alert portal-status" role="status" aria-live="polite"></p>
+    </main>
+
+    <script src="/portal.js"></script>
+    <script src="/imports.js"></script>
+  </body>
+</html>

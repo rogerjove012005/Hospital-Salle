@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Pacientes — laSalle Health Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="app-body" data-portal-page="patients" data-portal-title="Pacientes">
+    <main class="app-main" id="patientsTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <span class="portal-card__badge">Área clínica</span>
+          <h1 class="clinic-header__title">Pacientes asignados</h1>
+          <p class="clinic-header__sub" id="patientsSub">Directorio hospitalario.</p>
+        </header>
+      </article>
+      <article class="portal-card clinic-card dash-card patients-card">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">Listado clínico</h2>
+          <p class="dash-card__sub">Datos del servicio hospitalario · solo lectura</p>
+        </header>
+        <div class="clinic-card__body">
+          <div class="patients-table-wrap">
+            <table class="patients-table" id="patientsTable">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Edad</th>
+                  <th scope="col">Sexo</th>
+                  <th scope="col">Teléfono</th>
+                </tr>
+              </thead>
+              <tbody id="patientsBody"></tbody>
+            </table>
+          </div>
+          <p class="patients-count" id="patientsCount"></p>
+        </div>
+      </article>
+      <p id="status" class="clinic-alert portal-status" role="status"></p>
+    </main>
+    <script src="/portal.js"></script>
+    <script src="/patients.js"></script>
+  </body>
+</html>

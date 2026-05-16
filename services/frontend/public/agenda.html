@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Agenda — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="app-body" data-portal-page="agenda" data-portal-title="Agenda clínica">
+    <main class="app-main" id="agendaTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <p class="kicker">Planificación</p>
+          <h1 class="clinic-header__title" id="agendaTitle">Agenda</h1>
+          <p class="clinic-header__sub" id="agendaSub">Cargando…</p>
+        </header>
+      </article>
+      <article class="portal-card clinic-card dash-card">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title" id="agendaListTitle">Citas de hoy</h2>
+          <p class="dash-card__sub" id="agendaListSub">Vista demostrativa del centro.</p>
+        </header>
+        <div class="clinic-card__body">
+          <ul class="agenda-list" id="agendaList" aria-label="Listado de citas"></ul>
+        </div>
+      </article>
+      <p id="status" class="clinic-alert portal-status" role="status"></p>
+    </main>
+    <script src="/portal.js"></script>
+    <script src="/agenda.js"></script>
+  </body>
+</html>

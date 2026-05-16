@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Contacto — laSalle Health Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="app-body" data-portal-page="contact" data-portal-title="Contacto">
+    <main class="app-main" id="contactTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <p class="kicker">Atención al paciente</p>
+          <h1 class="clinic-header__title">Contacto y soporte</h1>
+          <p class="clinic-header__sub" id="contactSub">Canales oficiales del centro.</p>
+        </header>
+      </article>
+      <div class="contact-grid">
+        <article class="portal-card clinic-card contact-card">
+          <div class="portal-card__body clinic-card__body">
+            <h2 class="clinic-section-title">Teléfono</h2>
+            <p class="contact-card__value"><a href="tel:+34932202000">+34 932 20 20 00</a></p>
+            <p class="clinic-header__sub">Central · L–V 8:00–20:00</p>
+          </div>
+        </article>
+        <article class="portal-card clinic-card contact-card">
+          <div class="portal-card__body clinic-card__body">
+            <h2 class="clinic-section-title">Correo</h2>
+            <p class="contact-card__value"><a href="mailto:contacto@lasallesanidad.com">contacto@lasallesanidad.com</a></p>
+            <p class="clinic-header__sub">Respuesta en 24–48 h laborables</p>
+          </div>
+        </article>
+        <article class="portal-card clinic-card contact-card">
+          <div class="portal-card__body clinic-card__body">
+            <h2 class="clinic-section-title">Urgencias</h2>
+            <p class="contact-card__value">112</p>
+            <p class="clinic-header__sub">Fuera del horario del portal</p>
+          </div>
+        </article>
+      </div>
+      <article class="portal-card clinic-card contact-form-card">
+        <header class="portal-card__head dash-card__head">
+          <h2 class="dash-card__title">Enviar mensaje</h2>
+          <p class="dash-card__sub">Se abrirá su cliente de correo con el mensaje preparado.</p>
+        </header>
+        <div class="portal-card__body clinic-card__body">
+          <form id="contactForm" class="contact-form" novalidate>
+            <div class="auth-form__field">
+              <label class="auth-label" for="contactName">Nombre</label>
+              <input class="auth-input" id="contactName" type="text" required autocomplete="name" />
+            </div>
+            <div class="auth-form__field">
+              <label class="auth-label" for="contactEmail">Correo</label>
+              <input class="auth-input" id="contactEmail" type="email" required autocomplete="email" />
+            </div>
+            <div class="auth-form__field">
+              <label class="auth-label" for="contactTopic">Motivo</label>
+              <select class="auth-input" id="contactTopic">
+                <option value="consulta">Consulta general</option>
+                <option value="cita">Citas y agenda</option>
+                <option value="tecnico">Incidencia del portal</option>
+                <option value="privacidad">Privacidad (RGPD)</option>
+              </select>
+            </div>
+            <div class="auth-form__field">
+              <label class="auth-label" for="contactMessage">Mensaje</label>
+              <textarea class="auth-input contact-textarea" id="contactMessage" rows="5" required></textarea>
+            </div>
+            <button type="submit" class="clinic-btn clinic-btn--primary">Enviar por correo</button>
+          </form>
+        </div>
+      </article>
+      <p id="status" class="clinic-alert portal-status" role="status"></p>
+    </main>
+    <script src="/portal.js"></script>
+    <script src="/contact.js"></script>
+  </body>
+</html>

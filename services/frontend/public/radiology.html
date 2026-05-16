@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Radiología asistida — laSalle Health Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  </head>
+  <body class="app-body rx-page" data-portal-page="radiology" data-portal-title="Radiología RX">
+    <main class="app-main" id="rxTop">
+      <section class="rx-hero-banner" aria-labelledby="rxHeroTitle">
+        <div class="rx-hero-banner__glow" aria-hidden="true"></div>
+        <div class="rx-hero-banner__content">
+          <p class="rx-hero-banner__eyebrow">Servicio hospitalario · IA de apoyo</p>
+          <h1 class="rx-hero-banner__title" id="rxHeroTitle">Clasificación de radiografías de tórax</h1>
+          <p class="rx-hero-banner__lead" id="rxSub">
+            Analice imágenes RX en segundos. Clases: <strong>Sana</strong>, <strong>Neumonía</strong> y
+            <strong>COVID-19</strong>. Uso académico; no sustituye el juicio clínico.
+          </p>
+          <ul class="rx-class-badges" aria-label="Clases del modelo">
+            <li class="rx-class-badge rx-class-badge--ok">Sana</li>
+            <li class="rx-class-badge rx-class-badge--pne">Neumonía</li>
+            <li class="rx-class-badge rx-class-badge--covid">COVID-19</li>
+          </ul>
+          <div class="rx-hero-banner__actions">
+            <a href="#rxInfer" class="rx-cta rx-cta--primary">Subir radiografía</a>
+          </div>
+          <p class="rx-hero-banner__status clinic-alert" id="status" role="status"></p>
+        </div>
+        <div class="rx-hero-banner__visual" aria-hidden="true">
+          <svg viewBox="0 0 120 120" width="120" height="120" fill="none">
+            <rect x="8" y="16" width="104" height="88" rx="12" stroke="currentColor" stroke-width="2" opacity="0.35"/>
+            <circle cx="60" cy="52" r="22" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+            <path d="M36 78 Q60 62 84 78" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </div>
+      </section>
+
+      <ol class="rx-steps" aria-label="Pasos de uso">
+        <li><span>1</span> Revise métricas del modelo</li>
+        <li><span>2</span> Seleccione imagen PNG/JPEG</li>
+        <li><span>3</span> Analice y documente el resultado</li>
+      </ol>
+
+      <div class="clinic-grid-2 rx-workspace">
+        <article class="portal-card clinic-card dash-card rx-card">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Métricas del modelo</h2>
+            <p class="dash-card__sub"><code>GET /radiology/metrics</code></p>
+          </header>
+          <div class="clinic-card__body">
+            <pre id="metricsOut" class="imports-pre rx-pre">Cargando…</pre>
+            <div class="chart-wrap chart-wrap--compact" id="rxF1Wrap" hidden>
+              <canvas id="chartRxF1Radiology" aria-label="F1 por clase"></canvas>
+            </div>
+            <figure class="rx-matrix" id="rxMatrixWrap" hidden>
+              <img id="rxConfusionImg" alt="Matriz de confusión del modelo" width="320" height="320" />
+              <figcaption>Matriz de confusión (conjunto de prueba)</figcaption>
+            </figure>
+          </div>
+        </article>
+        <article class="portal-card clinic-card dash-card rx-card rx-card--infer" id="rxInfer">
+          <header class="dash-card__head">
+            <h2 class="dash-card__title">Inferencia clínica</h2>
+            <p class="dash-card__sub"><code>POST /radiology/predict</code></p>
+          </header>
+          <div class="clinic-card__body">
+            <label class="rx-dropzone" for="fileRx">
+              <span class="rx-dropzone__title">Seleccionar radiografía</span>
+              <span class="rx-dropzone__hint" id="rxFileHint">PNG o JPEG · 224×224 px</span>
+              <input id="fileRx" type="file" accept="image/png,image/jpeg" class="rx-dropzone__input" />
+            </label>
+            <button type="button" class="clinic-btn clinic-btn--primary rx-cta--block" id="btnPredict">
+              Analizar radiografía
+            </button>
+            <pre id="predictOut" class="imports-pre rx-pre rx-pre--result" hidden></pre>
+          </div>
+        </article>
+      </div>
+    </main>
+    <script src="/portal.js"></script>
+    <script src="/radiology.js"></script>
+  </body>
+</html>

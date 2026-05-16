@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Mi perfil — laSalle Health Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="app-body" data-portal-page="profile" data-portal-title="Mi perfil">
+    <main class="app-main" id="profileTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <p class="kicker">Ficha de usuario</p>
+          <div class="clinic-header__row">
+            <div>
+              <h1 class="clinic-header__title" id="profileTitle">Mi perfil</h1>
+              <p class="clinic-header__sub" id="profileSub">Cargando datos…</p>
+              <div class="clinic-header__chips">
+                <span class="chip chip--brand" id="profileRoleChip">—</span>
+                <span class="chip chip--quiet" id="profileIdChip">—</span>
+              </div>
+            </div>
+            <div class="dash-hero__avatar" aria-hidden="true"><span id="profileInitials">·</span></div>
+          </div>
+        </header>
+      </article>
+      <div class="portal-grid" id="profileFields"><p class="portal-loading">Cargando ficha…</p></div>
+      <p id="status" class="clinic-alert portal-status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="/portal.js"></script>
+    <script src="/profile.js"></script>
+  </body>
+</html>

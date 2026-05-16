@@ -227,9 +227,11 @@ async function boot() {
     applyRoleSpecifics(me);
     const navCsv = document.getElementById("navCsvImport");
     const navRx = document.getElementById("navRadiology");
+    const rxSpotlight = document.getElementById("rxSpotlight");
     if (me.role === "admin" || me.role === "medico") {
       if (navCsv) navCsv.hidden = false;
       if (navRx) navRx.hidden = false;
+      if (rxSpotlight) rxSpotlight.hidden = false;
     }
     setLoginMeta();
     mNextAppt.textContent = "—";

@@ -138,6 +138,16 @@ async function boot() {
     redirectLogin();
   });
 
+  const fileInput = qs("#fileRx");
+  const dropzone = fileInput && fileInput.closest(".rx-dropzone");
+  if (fileInput && dropzone) {
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files && fileInput.files[0];
+      const hint = dropzone.querySelector(".rx-dropzone__hint");
+      if (hint && file) hint.textContent = file.name;
+    });
+  }
+
   qs("#btnPredict").addEventListener("click", () => {
     void doPredict();
   });

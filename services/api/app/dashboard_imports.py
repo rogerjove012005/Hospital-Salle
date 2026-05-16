@@ -825,6 +825,74 @@ def list_batch_quality_issues(batch_id: str, user: UserOut, limit: int = 100) ->
     return out
 
 
+class DataQualitySummaryOut(BaseModel):
+    total_issues: int
+    by_severity: dict[str, int]
+    by_issue_type: dict[str, int]
+    recent: list[DataQualityIssueOut]
+
+
+def get_data_quality_summary(*, recent_limit: int = 15) -> DataQualitySummaryOut:
+    lim = min(max(1, recent_limit), 50)
+    with engine().connect() as conn:
+        counts = conn.execute(
+            text(
+                """
+                SELECT severity, COUNT(*)::int AS n
+                FROM data_quality_issues
+                GROUP BY severity
+                """
+            )
+        ).mappings().all()
+        types = conn.execute(
+            text(
+                """
+                SELECT issue_type, COUNT(*)::int AS n
+                FROM data_quality_issues
+                GROUP BY issue_type
+                ORDER BY n DESC
+                LIMIT 20
+                """
+            )
+        ).mappings().all()
+        total = conn.execute(text("SELECT COUNT(*)::int FROM data_quality_issues")).scalar_one()
+        rows = conn.execute(
+            text(
+                """
+                SELECT issue_id, dataset, issue_type, severity, row_ref, details, created_at
+                FROM data_quality_issues
+                ORDER BY created_at DESC
+                LIMIT :lim
+                """
+            ),
+            {"lim": lim},
+        ).mappings().all()
+
+    by_sev = {str(r["severity"]): int(r["n"]) for r in counts}
+    by_type = {str(r["issue_type"]): int(r["n"]) for r in types}
+    recent: list[DataQualityIssueOut] = []
+    for r in rows:
+        d = r.get("details")
+        details = dict(d) if isinstance(d, dict) else {}
+        recent.append(
+            DataQualityIssueOut(
+                issue_id=str(r["issue_id"]),
+                dataset=str(r["dataset"]),
+                issue_type=str(r["issue_type"]),
+                severity=str(r["severity"]),
+                row_ref=r.get("row_ref"),
+                details=details,
+                created_at=r.get("created_at"),
+            )
+        )
+    return DataQualitySummaryOut(
+        total_issues=int(total or 0),
+        by_severity=by_sev,
+        by_issue_type=by_type,
+        recent=recent,
+    )
+
+
 def list_csv_pipeline_events(limit: int = 50) -> list[PipelineEventOut]:
     lim = min(max(1, limit), 200)
     with engine().connect() as conn:

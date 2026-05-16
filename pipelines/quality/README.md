@@ -14,6 +14,7 @@ Creada en `infra/db/01-init.sql`. El API (`dashboard_imports.py`) inserta incide
 
 - Incidencias por lote: `GET /admin/imports/batches/{batch_id}/quality-issues`
 - Alertas globales: `GET /alerts` (fusiona pipeline + calidad)
+- Resumen admin: `GET /admin/imports/quality-summary` (conteos por severidad y tipo)
 
 ## Buenas prácticas
 

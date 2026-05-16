@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css?v=20260516h" />
     <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
   </head>
   <body class="app-body rx-page" data-portal-page="radiology" data-portal-title="Radiología RX">
     <main class="app-main" id="rxTop">
@@ -53,6 +54,13 @@
           </header>
           <div class="clinic-card__body">
             <pre id="metricsOut" class="imports-pre rx-pre">Cargando…</pre>
+            <div class="chart-wrap chart-wrap--compact" id="rxF1Wrap" hidden>
+              <canvas id="chartRxF1Radiology" aria-label="F1 por clase"></canvas>
+            </div>
+            <figure class="rx-matrix" id="rxMatrixWrap" hidden>
+              <img id="rxConfusionImg" alt="Matriz de confusión del modelo" width="320" height="320" />
+              <figcaption>Matriz de confusión (conjunto de prueba)</figcaption>
+            </figure>
           </div>
         </article>
         <article class="portal-card clinic-card dash-card rx-card rx-card--infer" id="rxInfer">

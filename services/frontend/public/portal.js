@@ -21,6 +21,7 @@ const ROLE_LABELS_SHORT = {
 /** Páginas y roles permitidos */
 const PORTAL_PAGES = {
   dashboard: { roles: ["paciente", "medico", "admin"] },
+  analytics: { roles: ["paciente", "medico", "admin"] },
   profile: { roles: ["paciente", "medico", "admin"] },
   agenda: { roles: ["paciente", "medico", "admin"] },
   records: { roles: ["paciente"] },
@@ -46,7 +47,14 @@ function buildNavSections(role) {
   const sections = [
     {
       title: "Inicio",
-      items: [{ id: "dashboard", href: "/landing.html", label: "Mi panel" }],
+      items: [
+        { id: "dashboard", href: "/landing.html", label: "Mi panel" },
+        {
+          id: "analytics",
+          href: "/analytics.html",
+          label: role === "paciente" ? "Mi resumen" : "Centro de control",
+        },
+      ],
     },
     {
       title: "Área personal",
@@ -237,6 +245,8 @@ function roleIdChip(me) {
 const NAV_ICONS = {
   dashboard:
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11h6V4H4v7zm10 9h6v-7h-6v7zM4 20h6v-5H4v5zm10-9h6V4h-6v7z"/></svg>',
+  analytics:
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>',
   profile:
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>',
   agenda:

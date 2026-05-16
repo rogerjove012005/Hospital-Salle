@@ -12,6 +12,7 @@ from typing import Any
 import joblib
 import numpy as np
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from PIL import Image
 from pydantic import BaseModel, Field
 
@@ -29,6 +30,11 @@ class RadiologyMetricsOut(BaseModel):
     class_names: list[str] | None = None
     accuracy: float | None = None
     report_path: str | None = Field(default=None)
+    confusion_matrix: list[list[int]] | None = None
+    per_class_metrics: dict[str, dict[str, float]] | None = None
+    clinical_highlights: list[str] = Field(default_factory=list)
+    has_confusion_chart: bool = False
+    has_roc_chart: bool = False
     disclaimer: str = DISCLAIMER
 
 
@@ -85,6 +91,9 @@ def radiology_metrics(_user: UserOut = Depends(require_roles("admin", "medico"))
 
     classes_out = list(_class_labels or [])
     acc: float | None = None
+    cm: list[list[int]] | None = None
+    per_class: dict[str, dict[str, float]] | None = None
+    highlights: list[str] = []
     rp = MODEL_DIR / "evaluation_report.json"
     if rp.is_file():
         with rp.open(encoding="utf-8") as f:
@@ -95,13 +104,75 @@ def radiology_metrics(_user: UserOut = Depends(require_roles("admin", "medico"))
         cn = data.get("class_names")
         if isinstance(cn, list) and cn:
             classes_out = [str(x) for x in cn]
+        raw_cm = data.get("confusion_matrix")
+        if isinstance(raw_cm, list):
+            cm = [[int(x) for x in row] for row in raw_cm]
+        cr = data.get("classification_report")
+        if isinstance(cr, dict):
+            per_class = {}
+            for label in classes_out:
+                block = cr.get(label)
+                if isinstance(block, dict):
+                    per_class[label] = {
+                        k: float(block[k])
+                        for k in ("precision", "recall", "f1-score")
+                        if k in block and block[k] is not None
+                    }
+        highlights = _clinical_highlights_from_report(data, classes_out)
+
+    cap = MODEL_DIR / "clinical_analysis.json"
+    if cap.is_file() and not highlights:
+        try:
+            with cap.open(encoding="utf-8") as f:
+                ca = json.load(f)
+            interp = ca.get("confusion_matrix_interpretation")
+            if isinstance(interp, str):
+                highlights.append(interp[:400])
+        except Exception:
+            pass
 
     return RadiologyMetricsOut(
         available=True,
         class_names=classes_out,
         accuracy=acc,
         report_path="models/radiology/evaluation_report.json" if rp.is_file() else None,
+        confusion_matrix=cm,
+        per_class_metrics=per_class,
+        clinical_highlights=highlights[:5],
+        has_confusion_chart=(MODEL_DIR / "confusion_matrix.png").is_file(),
+        has_roc_chart=(MODEL_DIR / "roc_curves.png").is_file(),
     )
+
+
+def _clinical_highlights_from_report(data: dict, class_names: list[str]) -> list[str]:
+    out: list[str] = []
+    cm = data.get("confusion_matrix")
+    if not isinstance(cm, list) or not class_names:
+        return out
+    n = len(class_names)
+    for i in range(min(n, len(cm))):
+        row = cm[i] if i < len(cm) else []
+        if not isinstance(row, list):
+            continue
+        total = sum(int(x) for x in row)
+        if total <= 0:
+            continue
+        correct = int(row[i]) if i < len(row) else 0
+        err = total - correct
+        if err > 0:
+            out.append(
+                f"{class_names[i]}: {err} error(es) de {total} casos de prueba "
+                f"({100 * correct / total:.0f}% acierto en la clase)."
+            )
+    return out
+
+
+@router.get("/charts/confusion-matrix")
+def radiology_confusion_chart(_user: UserOut = Depends(require_roles("admin", "medico"))):
+    path = MODEL_DIR / "confusion_matrix.png"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Gráfico no disponible.")
+    return FileResponse(path, media_type="image/png", filename="confusion_matrix.png")
 
 
 @router.post("/predict", response_model=RadiologyPredictOut)

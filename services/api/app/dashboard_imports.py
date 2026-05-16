@@ -153,6 +153,13 @@ class PipelineEventOut(BaseModel):
     created_at: datetime | None
 
 
+class PipelineEventCreate(BaseModel):
+    stage: str
+    status: str
+    message: str
+    payload_ref: str | None = None
+
+
 def _row_fingerprint(row: dict[str, str]) -> str:
     normalized = tuple(sorted((k, (v or "").strip()) for k in sorted(row.keys())))
     return json.dumps(normalized, ensure_ascii=False, sort_keys=True)
@@ -254,6 +261,34 @@ def _maybe_archive_csv_raw(*, batch_id: str, filename: str, raw_bytes: bytes) ->
         )
     except S3Error as e:
         _log.warning("minio put csv failed: %s", e)
+
+
+def record_pipeline_event(
+    *,
+    stage: str,
+    status: str,
+    message: str,
+    payload_ref: str | None = None,
+) -> PipelineEventOut:
+    with engine().begin() as conn:
+        _emit_pipeline_event(
+            conn,
+            stage=stage[:64],
+            status=status[:32],
+            message=message,
+            payload_ref=payload_ref,
+        )
+    events = list_csv_pipeline_events(limit=1)
+    if events:
+        return events[0]
+    return PipelineEventOut(
+        event_id="",
+        stage=stage,
+        status=status,
+        message=message[:2000],
+        payload_ref=payload_ref,
+        created_at=None,
+    )
 
 
 def _emit_pipeline_event(
@@ -798,7 +833,7 @@ def list_csv_pipeline_events(limit: int = 50) -> list[PipelineEventOut]:
                 """
                 SELECT event_id, stage, status, message, payload_ref, created_at
                 FROM pipeline_events
-                WHERE stage IN ('csv_ingestion', 'spark_csv_aggregate')
+                WHERE stage IN ('csv_ingestion', 'csv_ingest_worker', 'spark_csv_aggregate')
                 ORDER BY created_at DESC
                 LIMIT :lim
                 """

@@ -27,11 +27,19 @@ from .auth import (
 )
 from .csv_aggregates_stats import CsvSparkAggregatesOut, get_csv_spark_aggregates
 from .radiology import router as radiology_router
+from .dashboard_ops import (
+    DashboardSummaryOut,
+    OperationalAlertOut,
+    get_dashboard_summary,
+    hospital_report_response,
+    list_operational_alerts,
+)
 from .dashboard_imports import (
     CsvBatchDetail,
     CsvImportResult,
     CsvPreviewResult,
     DataQualityIssueOut,
+    PipelineEventCreate,
     PipelineEventOut,
     count_user_csv_imports,
     emit_csv_ingestion_failure,
@@ -42,6 +50,7 @@ from .dashboard_imports import (
     list_csv_pipeline_events,
     list_user_csv_imports,
     preview_csv_upload,
+    record_pipeline_event,
 )
 from .db import engine, init_auth_schema
 
@@ -332,12 +341,45 @@ def imports_csv_quality_issues(
     return list_batch_quality_issues(batch_id, user, limit=limit)
 
 
+@app.get("/dashboard/summary", response_model=DashboardSummaryOut)
+def dashboard_summary(user: UserOut = Depends(get_current_user)):
+    return get_dashboard_summary(user)
+
+
+@app.get("/alerts", response_model=list[OperationalAlertOut])
+def operational_alerts(
+    limit: int = 30,
+    _user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="limit debe estar entre 1 y 100")
+    return list_operational_alerts(limit=limit)
+
+
+@app.get("/reports/hospital")
+def hospital_operational_report(_user: UserOut = Depends(require_roles("admin", "medico"))):
+    return hospital_report_response(_user)
+
+
 @app.get("/admin/imports/pipeline-events", response_model=list[PipelineEventOut])
 def admin_csv_pipeline_events(
     limit: int = 50,
     _admin: UserOut = Depends(require_roles("admin")),
 ):
     return list_csv_pipeline_events(limit=limit)
+
+
+@app.post("/imports/pipeline-events", response_model=PipelineEventOut)
+def imports_record_pipeline_event(
+    body: PipelineEventCreate,
+    _user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    return record_pipeline_event(
+        stage=body.stage,
+        status=body.status,
+        message=body.message,
+        payload_ref=body.payload_ref,
+    )
 
 
 @app.get("/imports/csv")

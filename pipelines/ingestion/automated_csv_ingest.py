@@ -67,6 +67,25 @@ def obtain_token(api_base: str, email: str, password: str, timeout: int) -> str:
     return str(tok)
 
 
+def post_pipeline_event(
+    api_base: str,
+    token: str,
+    stage: str,
+    status: str,
+    message: str,
+    timeout: int,
+) -> None:
+    try:
+        requests.post(
+            f"{api_base.rstrip('/')}/imports/pipeline-events",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"stage": stage, "status": status, "message": message[:2000]},
+            timeout=min(30, timeout),
+        )
+    except Exception as e:
+        log_event(event="pipeline_event_failed", error=str(e))
+
+
 def post_csv(
     api_base: str,
     token: str,
@@ -195,6 +214,14 @@ def process_inbox(
 
             if code >= 400:
                 log_event(event="upload_error", source="inbox", path=str(path), http_status=code, detail=raw)
+                post_pipeline_event(
+                    api_base,
+                    token,
+                    "csv_ingestion",
+                    "error",
+                    f"Fallo subida {path.name}: HTTP {code}",
+                    timeout,
+                )
                 safe_move(path, failed_dir, ok=False)
                 continue
 
@@ -246,6 +273,18 @@ def cycle() -> int:
             save_state(state_path, state)
         except Exception as e:
             log_event(event="cycle_error", error=str(e))
+            try:
+                token = obtain_token(api_base, email, password, timeout=min(30, timeout))
+                post_pipeline_event(
+                    api_base,
+                    token,
+                    "csv_ingest_worker",
+                    "error",
+                    f"Error en ciclo de ingesta: {e}",
+                    timeout,
+                )
+            except Exception:
+                pass
 
         time.sleep(poll_interval)
 

@@ -7,11 +7,54 @@ function setRxStatus(msg, kind = "neutral") {
   if (kind === "error") el.classList.add("error", "clinic-alert--error");
 }
 
+let rxF1Chart = null;
+
+async function renderRxVisuals(metrics) {
+  const f1Wrap = portalQs("#rxF1Wrap");
+  const matrixWrap = portalQs("#rxMatrixWrap");
+  const img = portalQs("#rxConfusionImg");
+  if (!metrics.available) {
+    if (f1Wrap) f1Wrap.hidden = true;
+    if (matrixWrap) matrixWrap.hidden = true;
+    return;
+  }
+  if (f1Wrap && metrics.per_class_metrics && typeof Chart !== "undefined") {
+    f1Wrap.hidden = false;
+    const labels = Object.keys(metrics.per_class_metrics);
+    const values = labels.map((k) => metrics.per_class_metrics[k]["f1-score"] ?? 0);
+    if (rxF1Chart) rxF1Chart.destroy();
+    rxF1Chart = new Chart(portalQs("#chartRxF1Radiology"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{ label: "F1", data: values, backgroundColor: ["#10b981", "#f59e0b", "#ef4444"], borderRadius: 6 }],
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 1 } } },
+    });
+  }
+  if (matrixWrap && img) {
+    try {
+      const token = getToken();
+      const res = await fetch(`${PORTAL_API_BASE}/radiology/charts/confusion-matrix`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        img.src = URL.createObjectURL(blob);
+        matrixWrap.hidden = false;
+      }
+    } catch {
+      matrixWrap.hidden = true;
+    }
+  }
+}
+
 async function loadMetrics() {
   const pre = portalQs("#metricsOut");
   try {
     const body = await apiJson("/radiology/metrics");
     pre.textContent = JSON.stringify(body, null, 2);
+    await renderRxVisuals(body);
     setRxStatus("Métricas del modelo cargadas.", "ok");
   } catch (e) {
     pre.textContent = String(e.message || e);

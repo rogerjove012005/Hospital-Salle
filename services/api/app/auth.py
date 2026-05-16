@@ -156,15 +156,15 @@ class SelfRegisterRequest(BaseModel):
     role: Literal["paciente", "medico"]
 
     first_name: str = Field(min_length=1, max_length=80)
+    last_name: str = Field(min_length=1, max_length=80)
+    phone: str = Field(min_length=6, max_length=30, pattern=r"^\+?[0-9][0-9\s\-]{5,29}$")
+    date_of_birth: date
+    sex: Literal["M", "F", "O"]
 
     @field_validator("email")
     @classmethod
     def _email(cls, v: str) -> str:
         return validate_academic_email(v)
-    last_name: str = Field(min_length=1, max_length=80)
-    phone: str = Field(min_length=6, max_length=30, pattern=r"^\+?[0-9][0-9\s\-]{5,29}$")
-    date_of_birth: date
-    sex: Literal["M", "F", "O"]
 
     @field_validator("password")
     @classmethod

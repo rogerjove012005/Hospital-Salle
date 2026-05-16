@@ -2104,3 +2104,64 @@ code {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ——— Páginas del portal (perfil, agenda, pacientes, contacto) ——— */
+.portal-page {
+  gap: var(--space-6);
+}
+
+.portal-hero {
+  margin-bottom: 0;
+}
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.portal-field {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.portal-field__label {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.portal-field__value {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.portal-loading {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.portal-status {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.portal-status.ok {
+  color: var(--success);
+}
+
+.portal-status.error {
+  color: var(--error);
+}

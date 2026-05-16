@@ -1605,9 +1605,417 @@ code {
 /* ============================================================
  * Dashboard (landing.html) — minimalista compacto
  * ============================================================ */
-.dash-body {
+.dash-body:not(.app-body) {
   background: #f6f3ed;
   background-image: none;
+}
+
+/* ============================================================
+ * Portal clínico (app) — misma estética que login/register
+ * ============================================================ */
+.app-body {
+  /* Hereda gradientes de body; no aplana el fondo */
+}
+
+.app-shell {
+  flex: 1;
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-6) var(--container-pad) var(--space-8);
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.app-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.app-main {
+  display: grid;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-sidebar {
+  position: sticky;
+  top: var(--space-4);
+  padding: 0;
+  overflow: hidden;
+  animation: cardIn 0.35s ease-out both;
+}
+
+.app-sidebar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: linear-gradient(180deg, #fbf9f5 0%, #f5f0e7 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-sidebar__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(140deg, #0d9488, #0f766e);
+  color: #ecfdf5;
+  font-weight: 800;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  border: 1px solid #0a5f58;
+}
+
+.app-sidebar__name {
+  margin: 0;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--text-strong);
+  line-height: 1.2;
+}
+
+.app-sidebar__id {
+  margin: 3px 0 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.app-nav {
+  padding: var(--space-4) var(--space-3) var(--space-5);
+}
+
+.app-nav__section + .app-nav__section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-soft);
+}
+
+.app-nav__section-title {
+  margin: 0 0 var(--space-2);
+  padding: 0 var(--space-2);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.app-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.app-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-nav__link:hover {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  text-decoration: none;
+}
+
+.app-nav__link[aria-current="page"] {
+  background: linear-gradient(90deg, #ecfdf5, #fff);
+  color: var(--brand-dark);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.app-nav__link--featured {
+  background: linear-gradient(90deg, rgba(15, 118, 110, 0.08), transparent);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+.app-nav__link--featured[aria-current="page"] {
+  background: linear-gradient(90deg, #ccfbf1, #ecfdf5);
+}
+
+.app-nav__icon {
+  display: flex;
+  color: var(--brand);
+  opacity: 0.9;
+}
+
+.app-header__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.app-header__role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a7f3d0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.clinic-card {
+  margin: 0;
+}
+
+.clinic-card--denied .portal-card__body {
+  padding: var(--space-7);
+}
+
+.clinic-card__body {
+  padding: var(--space-6) var(--space-7);
+}
+
+.clinic-page-head {
+  margin: 0;
+}
+
+.clinic-page-head .portal-card__head {
+  padding: var(--space-6) var(--space-7);
+}
+
+.clinic-header__title {
+  margin: 0 0 6px;
+  font-size: clamp(1.35rem, 1rem + 1vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-strong);
+}
+
+.clinic-header__sub {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 58ch;
+}
+
+.clinic-header__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.clinic-header__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-3);
+}
+
+.clinic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-size: 0.88rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.clinic-btn--primary {
+  background: linear-gradient(180deg, #0d9488 0%, #0f766e 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.28);
+}
+
+.clinic-btn--primary:hover {
+  transform: translateY(-1px);
+  color: #fff;
+  text-decoration: none;
+}
+
+.clinic-btn--ghost {
+  background: #fff;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.clinic-btn--ghost:hover {
+  border-color: var(--brand);
+  color: var(--brand-dark);
+}
+
+.clinic-btn--sm {
+  padding: 8px 14px;
+  font-size: 0.78rem;
+}
+
+.clinic-alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  background: #faf9f7;
+  border: 1px solid var(--border);
+}
+
+.clinic-alert--ok {
+  background: #ecfdf5;
+  border-color: #99f6e4;
+  color: var(--success);
+}
+
+.clinic-alert--error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: var(--error);
+}
+
+.clinic-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+}
+
+.clinic-stat {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.clinic-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #0d9488, #d97706);
+  opacity: 0.7;
+}
+
+.clinic-stat__label {
+  margin: 0 0 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.clinic-stat__value {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--brand-dark);
+  line-height: 1.1;
+}
+
+.clinic-stat__hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.clinic-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.clinic-section-title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.app-body .portal-field,
+.app-body .agenda-item {
+  background: #fff;
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-body .dash-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+}
+
+.app-body .dash-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0d9488 0%, #d97706 50%, #0f766e 100%);
+  opacity: 0.85;
+}
+
+.app-body .dash-card__head {
+  background: linear-gradient(180deg, #fbf9f5 0%, #f5f0e7 100%);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-5) var(--space-6);
+}
+
+.app-body .rx-spotlight {
+  border-radius: var(--radius-lg);
+}
+
+.app-body .site-footer--app {
+  margin-top: auto;
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    padding-top: var(--space-5);
+  }
+  .app-sidebar {
+    position: static;
+  }
+  .clinic-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-header__user {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 
 .dash {
@@ -2676,4 +3084,65 @@ code {
 .contact-textarea {
   resize: vertical;
   min-height: 120px;
+}
+
+.records-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.records-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.records-item__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-light);
+  color: var(--brand-dark);
+}
+
+.records-item__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.records-item__meta {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.records-item--empty {
+  grid-template-columns: 1fr;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.clinic-field {
+  position: relative;
+}
+
+.app-body .auth-input,
+.app-body .auth-label {
+  font-family: var(--font);
+}
+
+.app-body .auth-submit {
+  display: none;
 }

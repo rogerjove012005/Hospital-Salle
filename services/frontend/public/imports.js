@@ -247,21 +247,11 @@ async function loadDetail(batchId) {
 }
 
 async function boot() {
-  if (!getToken()) {
-    redirectLogin();
-    return;
-  }
+  const ctx = await initPortalApp();
+  if (!ctx || ctx.denied) return;
+  const me = ctx.me;
   try {
-    const { body: me } = await apiJson("/auth/me");
-    if (me.role !== "admin" && me.role !== "medico") {
-      setStatus("Solo administración y personal autorizado pueden usar la ingesta CSV.", "error");
-      qs("#cardPreview").style.opacity = "0.55";
-      qs("#cardImport").style.opacity = "0.55";
-      const sp = qs("#cardSpark");
-      if (sp) sp.style.opacity = "0.55";
-      return;
-    }
-    qs("#importsSub").textContent = `Sesión: ${me.email} · Rol: ${me.role}`;
+    qs("#importsSub").textContent = `Operaciones de ingesta · ${me.email} · ${ROLE_LABELS[me.role] || me.role}`;
     await loadBatches();
     const sparkOk = await loadSparkStats();
     if (!sparkOk) setStatus("Métricas Spark no disponibles o API en error.", "error");
@@ -274,10 +264,6 @@ async function boot() {
   }
 }
 
-qs("#btnLogout")?.addEventListener("click", () => {
-  setToken(null);
-  redirectLogin();
-});
 qs("#btnPreview")?.addEventListener("click", () =>
   doPreview().catch((e) => setStatus(String(e.message || e), "error")),
 );

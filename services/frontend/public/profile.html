@@ -11,52 +11,30 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260516a" />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
     <script src="/config.js"></script>
   </head>
-  <body class="dash-body">
-    <header class="site-header">
-      <div class="site-header__inner">
-        <a href="/landing.html" class="site-logo" aria-label="Volver al panel">
-          <span class="site-logo__text">
-            <span class="site-logo__title">laSalle Health Center</span>
-            <span class="site-logo__subtitle">Mi perfil</span>
-          </span>
-        </a>
-        <nav class="site-nav" aria-label="Navegación">
-          <a href="/landing.html">Panel</a>
-          <a href="#profileTop" aria-current="page">Perfil</a>
-        </nav>
-      </div>
-    </header>
-
-    <main class="dash portal-page" id="profileTop">
-      <section class="dash-hero portal-hero">
-        <div class="dash-hero__top">
-          <p class="dash-hero__eyebrow">Cuenta</p>
-          <button id="btnLogout" class="dash-hero__logout" type="button">Cerrar sesión</button>
-        </div>
-        <div class="dash-hero__main">
-          <div class="dash-hero__avatar" aria-hidden="true">
-            <span id="profileInitials">·</span>
-          </div>
-          <div class="dash-hero__intro">
-            <h1 class="dash-hero__title" id="profileTitle">Mi perfil</h1>
-            <p class="dash-hero__sub" id="profileSub">Cargando datos de la sesión…</p>
-            <div class="dash-hero__chips">
-              <span class="chip chip--brand" id="profileRoleChip">—</span>
-              <span class="chip chip--quiet" id="profileIdChip">—</span>
+  <body class="app-body" data-portal-page="profile" data-portal-title="Mi perfil">
+    <main class="app-main" id="profileTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <p class="kicker">Ficha de usuario</p>
+          <div class="clinic-header__row">
+            <div>
+              <h1 class="clinic-header__title" id="profileTitle">Mi perfil</h1>
+              <p class="clinic-header__sub" id="profileSub">Cargando datos…</p>
+              <div class="clinic-header__chips">
+                <span class="chip chip--brand" id="profileRoleChip">—</span>
+                <span class="chip chip--quiet" id="profileIdChip">—</span>
+              </div>
             </div>
+            <div class="dash-hero__avatar" aria-hidden="true"><span id="profileInitials">·</span></div>
           </div>
-        </div>
-      </section>
-
-      <div class="portal-grid" id="profileFields">
-        <p class="portal-loading">Cargando ficha…</p>
-      </div>
-      <p id="status" class="portal-status" role="status" aria-live="polite"></p>
+        </header>
+      </article>
+      <div class="portal-grid" id="profileFields"><p class="portal-loading">Cargando ficha…</p></div>
+      <p id="status" class="clinic-alert portal-status" role="status" aria-live="polite"></p>
     </main>
-
     <script src="/portal.js"></script>
     <script src="/profile.js"></script>
   </body>

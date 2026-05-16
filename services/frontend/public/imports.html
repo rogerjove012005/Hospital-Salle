@@ -10,45 +10,21 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260511b" />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
     <script src="/config.js"></script>
   </head>
-  <body class="dash-body">
-    <header class="site-header">
-      <div class="site-header__inner">
-        <a href="/landing.html" class="site-logo" aria-label="Volver al panel">
-          <span class="site-logo__text">
-            <span class="site-logo__title">laSalle Health Center</span>
-            <span class="site-logo__subtitle">Ingesta hospitalaria · CSV</span>
-          </span>
-        </a>
-        <nav class="site-nav" aria-label="Navegación">
-          <a href="/landing.html">Panel</a>
-          <a href="#importsTop" aria-current="page">Operaciones CSV</a>
-        </nav>
-      </div>
-    </header>
+  <body class="app-body" data-portal-page="imports" data-portal-title="Ingesta CSV">
+    <main class="app-main" id="importsTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <span class="portal-card__badge">Operaciones hospitalarias</span>
+          <h1 class="clinic-header__title">Ingesta de ficheros CSV</h1>
+          <p class="clinic-header__sub" id="importsSub">Vista previa, importación y auditoría de calidad.</p>
+        </header>
+      </article>
 
-    <main class="dash" id="importsTop">
-      <section class="dash-hero" style="margin-bottom: var(--space-7)">
-        <div class="dash-hero__top">
-          <p class="dash-hero__eyebrow">Ingesta datos</p>
-          <button id="btnLogout" class="dash-hero__logout" type="button">Cerrar sesión</button>
-        </div>
-        <div class="dash-hero__main">
-          <div class="dash-hero__intro" style="max-width: none">
-            <h1 class="dash-hero__title">Importación de ficheros CSV</h1>
-            <p class="dash-hero__sub" id="importsSub">
-              Vista previa, importación persistente en PostgreSQL, resumen de calidad y auditoría técnica
-              (<code>/imports/csv*</code>). Los datos tratados cumplen función de proyecto académico; no despliegan un registro
-              clínico real.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <div class="dash-grid" style="grid-template-columns: 1fr 1fr; align-items: start">
-        <article class="dash-card" id="cardPreview">
+      <div class="clinic-grid-2">
+        <article class="portal-card clinic-card dash-card" id="cardPreview">
           <header class="dash-card__head">
             <h2 class="dash-card__title">1. Vista previa (sin guardar)</h2>
             <p class="dash-card__sub">Llama a <code>POST /imports/csv/preview</code> y muestra calidad automática.</p>
@@ -57,11 +33,13 @@
             <label class="auth-label" for="filePreview">Fichero CSV</label>
             <input type="file" id="filePreview" accept=".csv,text/csv" class="auth-input" />
           </div>
-          <button type="button" class="auth-submit" id="btnPreview">Generar vista previa</button>
+          <div class="clinic-card__body">
+          <button type="button" class="clinic-btn clinic-btn--primary" id="btnPreview">Generar vista previa</button>
           <pre id="previewOut" class="imports-pre" hidden></pre>
+          </div>
         </article>
 
-        <article class="dash-card" id="cardImport">
+        <article class="portal-card clinic-card dash-card" id="cardImport">
           <header class="dash-card__head">
             <h2 class="dash-card__title">2. Importar a base de datos</h2>
             <p class="dash-card__sub">Llama a <code>POST /imports/csv</code> (deduplicación por hash si ya existía).</p>
@@ -70,12 +48,12 @@
             <label class="auth-label" for="fileImport">Fichero CSV</label>
             <input type="file" id="fileImport" accept=".csv,text/csv" class="auth-input" />
           </div>
-          <button type="button" class="auth-submit" id="btnImport">Importar lote</button>
+          <button type="button" class="clinic-btn clinic-btn--primary" id="btnImport">Importar lote</button>
           <pre id="importOut" class="imports-pre" hidden></pre>
         </article>
       </div>
 
-      <article class="dash-card" style="margin-top: var(--space-7)">
+      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)">
         <header class="dash-card__head">
           <h2 class="dash-card__title">3. Lotes recientes</h2>
           <p class="dash-card__sub">
@@ -100,7 +78,7 @@
         <p id="batchEmpty" class="dash-card__sub" hidden>Sin lotes todavía. Importe un CSV o genere uno de prueba.</p>
       </article>
 
-      <article class="dash-card" style="margin-top: var(--space-6)" id="cardSpark">
+      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)" id="cardSpark">
         <header class="dash-card__head">
           <h2 class="dash-card__title">4. Agregados PySpark (capa analítica)</h2>
           <p class="dash-card__sub">
@@ -128,7 +106,7 @@
         <p id="sparkEmpty" class="dash-card__sub" hidden>Aún no hay agregados (esperar el job Spark o importar CSV).</p>
       </article>
 
-      <article class="dash-card" style="margin-top: var(--space-6)">
+      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)">
         <header class="dash-card__head">
           <h2 class="dash-card__title">5. Detalle del lote</h2>
           <p class="dash-card__sub">
@@ -140,19 +118,10 @@
         <pre id="detailOut" class="imports-pre">Seleccione un lote en la tabla.</pre>
       </article>
 
-      <div class="status" aria-live="polite" style="margin-top: var(--space-6)">
-        <div id="status" class="statusText"></div>
-      </div>
+      <p id="status" class="clinic-alert portal-status" role="status" aria-live="polite"></p>
     </main>
 
-    <footer class="site-footer site-footer--rich" role="contentinfo">
-      <div class="site-footer__shell site-footer__shell--simple">
-        <div class="site-footer__meta site-footer__meta--rich">
-          <p>© 2026 laSalle Health Center · Ingesta simulada para proyecto académico.</p>
-        </div>
-      </div>
-    </footer>
-
+    <script src="/portal.js"></script>
     <script src="/imports.js"></script>
   </body>
 </html>

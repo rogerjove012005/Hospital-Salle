@@ -4,80 +4,45 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f766e" />
-    <title>Pacientes asignados — laSalle Health Center</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/styles.css?v=20260516c" />
+    <title>Pacientes — laSalle Health Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=20260516h" />
     <script src="/config.js"></script>
   </head>
-  <body class="dash-body">
-    <header class="site-header">
-      <div class="site-header__inner">
-        <a href="/landing.html" class="site-logo" aria-label="Volver al panel">
-          <span class="site-logo__text">
-            <span class="site-logo__title">laSalle Health Center</span>
-            <span class="site-logo__subtitle">Pacientes asignados</span>
-          </span>
-        </a>
-        <nav class="site-nav" aria-label="Navegación">
-          <a href="/landing.html">Panel</a>
-          <a href="#patientsTop" aria-current="page">Pacientes</a>
-        </nav>
-      </div>
-    </header>
-
-    <main class="dash portal-page" id="patientsTop">
-      <section class="dash-hero portal-hero" id="patientsHero">
-        <div class="dash-hero__top">
-          <p class="dash-hero__eyebrow">Área clínica</p>
-          <button id="btnLogout" class="dash-hero__logout" type="button">Cerrar sesión</button>
-        </div>
-        <div class="dash-hero__main">
-          <div class="dash-hero__intro" style="max-width: none">
-            <h1 class="dash-hero__title">Pacientes asignados</h1>
-            <p class="dash-hero__sub" id="patientsSub">Solo personal clínico autorizado.</p>
-          </div>
-        </div>
-      </section>
-
-      <article class="dash-card patients-card" id="patientsContent" hidden>
-        <header class="dash-card__head">
-          <h2 class="dash-card__title">Listado de pacientes</h2>
-          <p class="dash-card__sub">Datos desde <code>GET /patients</code> · proyecto académico.</p>
+  <body class="app-body" data-portal-page="patients" data-portal-title="Pacientes">
+    <main class="app-main" id="patientsTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <span class="portal-card__badge">Área clínica</span>
+          <h1 class="clinic-header__title">Pacientes asignados</h1>
+          <p class="clinic-header__sub" id="patientsSub">Directorio hospitalario.</p>
         </header>
-        <div class="patients-table-wrap">
-          <table class="patients-table" id="patientsTable">
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Nombre</th>
-                <th scope="col">Edad</th>
-                <th scope="col">Sexo</th>
-                <th scope="col">Teléfono</th>
-              </tr>
-            </thead>
-            <tbody id="patientsBody"></tbody>
-          </table>
+      </article>
+      <article class="portal-card clinic-card dash-card patients-card">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">Listado clínico</h2>
+          <p class="dash-card__sub">Datos del servicio hospitalario · solo lectura</p>
+        </header>
+        <div class="clinic-card__body">
+          <div class="patients-table-wrap">
+            <table class="patients-table" id="patientsTable">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Edad</th>
+                  <th scope="col">Sexo</th>
+                  <th scope="col">Teléfono</th>
+                </tr>
+              </thead>
+              <tbody id="patientsBody"></tbody>
+            </table>
+          </div>
+          <p class="patients-count" id="patientsCount"></p>
         </div>
-        <p class="patients-count" id="patientsCount"></p>
       </article>
-
-      <article class="dash-card portal-denied" id="patientsDenied" hidden>
-        <h2 class="dash-card__title">Acceso restringido</h2>
-        <p class="dash-card__sub">
-          Esta sección está reservada a médicos y administración. Si cree que debería tener acceso,
-          contacte con el centro.
-        </p>
-        <a class="portal-backlink" href="/landing.html">Volver al panel</a>
-      </article>
-
-      <p id="status" class="portal-status" role="status" aria-live="polite"></p>
+      <p id="status" class="clinic-alert portal-status" role="status"></p>
     </main>
-
     <script src="/portal.js"></script>
     <script src="/patients.js"></script>
   </body>

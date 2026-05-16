@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
@@ -25,11 +25,25 @@ bearer = HTTPBearer(auto_error=False)
 
 _PASSWORD_MIN_LEN = 8
 _PASSWORD_MAX_LEN = 128
+_ACADEMIC_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def validate_academic_email(value: str) -> str:
+    """Acepta dominios académicos (.local, .hospital) además de correos estándar."""
+    email = value.strip().lower()
+    if not _ACADEMIC_EMAIL_RE.match(email):
+        raise ValueError("Introduzca un correo válido (usuario@dominio.ext)")
+    return email
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        return validate_academic_email(v)
 
 
 class TokenResponse(BaseModel):
@@ -46,8 +60,13 @@ class UserOut(BaseModel):
 
 
 class CreateUserRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=_PASSWORD_MIN_LEN, max_length=_PASSWORD_MAX_LEN)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        return validate_academic_email(v)
     role: Role
     patient_id: str | None = None
     medico_id: str | None = None
@@ -132,11 +151,16 @@ class CreateUserRequest(BaseModel):
 
 
 class SelfRegisterRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=_PASSWORD_MIN_LEN, max_length=_PASSWORD_MAX_LEN)
     role: Literal["paciente", "medico"]
 
     first_name: str = Field(min_length=1, max_length=80)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        return validate_academic_email(v)
     last_name: str = Field(min_length=1, max_length=80)
     phone: str = Field(min_length=6, max_length=30, pattern=r"^\+?[0-9][0-9\s\-]{5,29}$")
     date_of_birth: date
@@ -612,7 +636,12 @@ def list_users() -> list[dict[str, Any]]:
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=254)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        return validate_academic_email(v)
 
 
 class ForgotPasswordResponse(BaseModel):

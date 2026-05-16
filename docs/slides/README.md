@@ -18,6 +18,10 @@ Esquema sugerido para diapositivas (exportar a PDF/PPT según indique el profeso
 12. **Demo en vivo** — login → import → analytics → RX predict.
 13. **Conclusiones y trabajo futuro**.
 
+## Presentación HTML
+
+Abrir en navegador (modo pantalla completa): [`presentacion-hospital.html`](presentacion-hospital.html) — 8 diapositivas con scroll.
+
 ## Capturas recomendadas
 
 - `landing.html`, `analytics.html`, `radiology.html`, `imports.html` (admin).

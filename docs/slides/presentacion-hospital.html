@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>laSalle Health Center — Presentación</title>
+    <style>
+      :root {
+        --brand: #0f766e;
+        --bg: #f5f0e7;
+        --text: #1c1917;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        scroll-snap-type: y mandatory;
+        overflow-y: scroll;
+        height: 100vh;
+      }
+      section {
+        min-height: 100vh;
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 4rem 8vw;
+      }
+      h1,
+      h2 {
+        color: var(--brand);
+        margin: 0 0 1rem;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 3.2rem);
+      }
+      h2 {
+        font-size: clamp(1.4rem, 3vw, 2rem);
+      }
+      p,
+      li {
+        font-size: 1.15rem;
+        line-height: 1.55;
+        max-width: 52rem;
+      }
+      ul {
+        margin: 0.5rem 0;
+      }
+      .meta {
+        opacity: 0.75;
+        font-size: 0.95rem;
+      }
+      .tag {
+        display: inline-block;
+        background: var(--brand);
+        color: #fff;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+      }
+      nav {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        font-size: 0.85rem;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <span class="tag">Proyecto académico</span>
+      <h1>laSalle Health Center</h1>
+      <p>Sistema inteligente de soporte hospitalario — IA, Big Data y automatización.</p>
+      <p class="meta">Presentación 10–15 min · Docker · FastAPI · PySpark · Radiología IA</p>
+    </section>
+
+    <section>
+      <h2>1. Problema y objetivo</h2>
+      <ul>
+        <li>Digitalizar ingesta de datos clínicos heterogéneos (CSV).</li>
+        <li>Apoyar decisiones con analítica y clasificación de radiografías RX.</li>
+        <li>Portal unificado para paciente, médico y administración.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. Arquitectura</h2>
+      <ul>
+        <li><strong>PostgreSQL</strong> — datos estructurados y eventos.</li>
+        <li><strong>MinIO</strong> — archivos CSV archivados.</li>
+        <li><strong>FastAPI</strong> — REST, JWT, RBAC.</li>
+        <li><strong>Workers</strong> — ingesta CSV + PySpark.</li>
+        <li><strong>Frontend nginx</strong> — portal estático.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Pipeline de datos</h2>
+      <p>mock-hospital-feed → csv-ingest-worker → POST /imports/csv → calidad → spark-csv-aggregate → dashboard.</p>
+      <p class="meta">50k+ filas agregadas en demo · Parquet en volumen Docker.</p>
+    </section>
+
+    <section>
+      <h2>4. Centro de control</h2>
+      <ul>
+        <li>KPIs operativos y gráficos Chart.js.</li>
+        <li>Alertas (pipeline + data_quality_issues).</li>
+        <li>Informe HTML automatizado.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Radiología IA</h2>
+      <ul>
+        <li>Clases: Sana, Neumonía, COVID-19.</li>
+        <li>Métricas, matriz de confusión, inferencia POST /radiology/predict.</li>
+        <li>Disclaimer ético: no es diagnóstico médico.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>6. Seguridad y ética</h2>
+      <ul>
+        <li>JWT, roles, minimización de datos por perfil.</li>
+        <li>RGPD — datos sintéticos / demo.</li>
+        <li>Documentación en <code>docs/ethics/</code>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>7. Demo en vivo</h2>
+      <ol>
+        <li>Login admin → landing.</li>
+        <li>Centro de control + informe.</li>
+        <li>Radiología: métricas + predict.</li>
+        <li>Ingesta CSV (imports).</li>
+      </ol>
+      <p class="meta">http://localhost:3000</p>
+    </section>
+
+    <section>
+      <h2>8. Conclusiones</h2>
+      <ul>
+        <li>Stack containerizado reproducible con Compose.</li>
+        <li>Trazabilidad: eventos, calidad, observabilidad <code>/health/observability</code>.</li>
+        <li>Trabajo futuro: tests E2E, cluster Spark, despliegue cloud.</li>
+      </ul>
+      <p><strong>Gracias</strong></p>
+    </section>
+
+    <nav>Scroll ↓ · 8 diapositivas</nav>
+  </body>
+</html>

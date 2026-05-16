@@ -3,6 +3,9 @@ Módulo de evaluación: Matriz de confusión, métricas y análisis detallado
 """
 
 import numpy as np
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import (
@@ -11,7 +14,13 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import label_binarize
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from configs.config import Config
+
+_DEFAULT_MODELS = Path(Config.MODELS_DIR)
 
 
 class ModelEvaluator:
@@ -47,7 +56,11 @@ class ModelEvaluator:
         """Calcula todas las métricas"""
         
         accuracy = accuracy_score(self.y_true, self.predictions)
-        cm = confusion_matrix(self.y_true, self.predictions)
+        cm = confusion_matrix(
+            self.y_true,
+            self.predictions,
+            labels=list(range(len(self.class_names))),
+        )
         
         print(f"\n📊 MÉTRICAS GLOBALES:")
         print(f"  Accuracy: {accuracy:.4f}")
@@ -76,11 +89,16 @@ class ModelEvaluator:
             'class_names': self.class_names
         }
     
-    def plot_confusion_matrix(self, output_dir='ml/radiology-classifier/models'):
+    def plot_confusion_matrix(self, output_dir=None):
         """Grafica la matriz de confusión"""
+        output_dir = output_dir or str(_DEFAULT_MODELS)
         
-        cm = confusion_matrix(self.y_true, self.predictions)
-        
+        cm = confusion_matrix(
+            self.y_true,
+            self.predictions,
+            labels=list(range(len(self.class_names))),
+        )
+
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
         
         # Matriz sin normalizar
@@ -96,8 +114,14 @@ class ModelEvaluator:
         axes[0].set_ylabel('Real')
         axes[0].set_xlabel('Predicho')
         
-        # Matriz normalizada
-        cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        # Matriz normalizada por fila (evita división entre 0)
+        row_sums = cm.sum(axis=1)[:, np.newaxis]
+        cm_normalized = np.divide(
+            cm.astype(np.float64),
+            row_sums,
+            out=np.zeros_like(cm, dtype=np.float64),
+            where=row_sums != 0,
+        )
         sns.heatmap(
             cm_normalized, annot=True, fmt='.2%',
             xticklabels=self.class_names,
@@ -124,23 +148,31 @@ class ModelEvaluator:
         print("ANÁLISIS DETALLADO DE ERRORES")
         print("-"*60)
         
-        cm = confusion_matrix(self.y_true, self.predictions)
-        
+        cm = confusion_matrix(
+            self.y_true,
+            self.predictions,
+            labels=list(range(len(self.class_names))),
+        )
+
         print(f"\n🔍 ERRORES CRÍTICOS (Falsos Negativos):")
-        
-        # FN COVID-19 (no detecta COVID como COVID)
-        fn_covid = cm[0, 1] + cm[0, 2]  # Clase 0 = COVID
-        print(f"\n  COVID-19 no detectado como COVID: {fn_covid}")
-        if fn_covid > 0:
-            print(f"    ⚠️  CRÍTICO: Falsos negativos en COVID-19")
-            print(f"    Impacto: Pacientes potencialmente infecciosos no aislados")
-        
-        # FN Neumonía
-        fn_pneumonia = cm[1, 0] + cm[1, 2]  # Clase 1 = Neumonía
-        print(f"\n  Neumonía no detectada: {fn_pneumonia}")
-        if fn_pneumonia > 0:
-            print(f"    ⚠️  IMPORTANTE: Falsos negativos en Neumonía")
-            print(f"    Impacto: Retraso en tratamiento")
+
+        def fn_for(label: str) -> int:
+            i = self.class_names.index(label)
+            return int(cm[i].sum() - cm[i, i])
+
+        if "COVID-19" in self.class_names:
+            fn_covid = fn_for("COVID-19")
+            print(f"\n  COVID-19 no detectado como COVID-19: {fn_covid}")
+            if fn_covid > 0:
+                print(f"    ⚠️  CRÍTICO: Falsos negativos en COVID-19")
+                print(f"    Impacto: Pacientes potencialmente infecciosos no aislados")
+
+        if "NEUMONIA" in self.class_names:
+            fn_pneumonia = fn_for("NEUMONIA")
+            print(f"\n  NEUMONIA no detectada: {fn_pneumonia}")
+            if fn_pneumonia > 0:
+                print(f"    ⚠️  IMPORTANTE: Falsos negativos en neumonía")
+                print(f"    Impacto: Retraso en tratamiento")
         
         print(f"\n📊 ANÁLISIS POR CLASE:")
         for i, class_name in enumerate(self.class_names):
@@ -157,8 +189,9 @@ class ModelEvaluator:
             print(f"    Sensibilidad (Recall): {sensitivity:.4f}")
             print(f"    Especificidad: {specificity:.4f}")
     
-    def plot_roc_curves(self, output_dir='ml/radiology-classifier/models'):
+    def plot_roc_curves(self, output_dir=None):
         """Grafica curvas ROC para cada clase"""
+        output_dir = output_dir or str(_DEFAULT_MODELS)
         
         # Binarizar labels
         y_bin = label_binarize(self.y_true, classes=range(len(self.class_names)))
@@ -186,8 +219,9 @@ class ModelEvaluator:
         print(f"✓ Curvas ROC guardadas")
         plt.close()
     
-    def save_evaluation_report(self, output_dir='ml/radiology-classifier/models'):
+    def save_evaluation_report(self, output_dir=None):
         """Guarda reporte completo de evaluación"""
+        output_dir = output_dir or str(_DEFAULT_MODELS)
         
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         

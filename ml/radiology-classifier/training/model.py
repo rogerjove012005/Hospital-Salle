@@ -46,8 +46,8 @@ class RadiologyModel:
         return self.pipeline
 
     def get_class_weights(self):
-        """Pesos de clase: COVID-19 tiene mayor peso (crítico no detectar)"""
-        return {0: 1.5, 1: 1.0, 2: 1.0}
+        """Pesos por índice: 0=SANA, 1=NEUMONIA, 2=COVID-19 (mayor peso por patología contagiosa)."""
+        return {0: 1.0, 1: 1.2, 2: 1.6}
 
     def _log_architecture_decisions(self, n_pca_components):
         print("\n" + "="*60)

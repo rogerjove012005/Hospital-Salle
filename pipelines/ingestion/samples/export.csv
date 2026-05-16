@@ -1,0 +1,3 @@
+patient_reference,department,severity_label,oxygen_sat_pct,comments
+AUTO-SIM-P001,Urgencias,observation,96,Generado por feed HTTP simulado (proyecto académico)
+AUTO-SIM-P002,Hospitalización,routine,94,Replica control calidad automatizada

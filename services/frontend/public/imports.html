@@ -10,118 +10,302 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <link rel="stylesheet" href="/styles.css?v=20260518btn" />
     <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
   <body class="app-body" data-portal-page="imports" data-portal-title="Ingesta CSV">
-    <main class="app-main" id="importsTop">
-      <article class="portal-card clinic-card clinic-page-head">
+    <main class="app-main imports-page" id="importsTop">
+      <article class="portal-card clinic-card clinic-page-head imports-page-head">
         <header class="portal-card__head">
           <span class="portal-card__badge">Operaciones hospitalarias</span>
-          <h1 class="clinic-header__title">Ingesta de ficheros CSV</h1>
-          <p class="clinic-header__sub" id="importsSub">Vista previa, importación y auditoría de calidad.</p>
+          <h1 class="clinic-header__title">Ingesta y pipeline de datos</h1>
+          <p class="clinic-header__sub" id="importsSub">CSV → PostgreSQL → análisis → modelo clínico</p>
         </header>
       </article>
 
-      <div class="clinic-grid-2">
-        <article class="portal-card clinic-card dash-card" id="cardPreview">
-          <header class="dash-card__head">
-            <h2 class="dash-card__title">1. Vista previa (sin guardar)</h2>
-            <p class="dash-card__sub">Llama a <code>POST /imports/csv/preview</code> y muestra calidad automática.</p>
-          </header>
-          <div class="auth-form__field" style="margin-bottom: var(--space-4)">
-            <label class="auth-label" for="filePreview">Fichero CSV</label>
-            <input type="file" id="filePreview" accept=".csv,text/csv" class="auth-input" />
-          </div>
-          <div class="clinic-card__body">
-          <button type="button" class="clinic-btn clinic-btn--primary" id="btnPreview">Generar vista previa</button>
-          <pre id="previewOut" class="imports-pre" hidden></pre>
-          </div>
-        </article>
+      <nav class="imports-section-nav portal-card clinic-card" aria-label="Secciones de ingesta">
+        <a href="#pipelineCard" class="imports-section-nav__link">Pipeline</a>
+        <a href="#sec-lotes" class="imports-section-nav__link">Lotes</a>
+        <a href="#sec-spark" class="imports-section-nav__link">Agregados</a>
+        <a href="#sec-detail" class="imports-section-nav__link">Detalle</a>
+        <a href="#mlStudioDetails" class="imports-section-nav__link">Modelo ML</a>
+        <a href="#sec-tools" class="imports-section-nav__link">Herramientas</a>
+      </nav>
 
-        <article class="portal-card clinic-card dash-card" id="cardImport">
-          <header class="dash-card__head">
-            <h2 class="dash-card__title">2. Importar a base de datos</h2>
-            <p class="dash-card__sub">Llama a <code>POST /imports/csv</code> (deduplicación por hash si ya existía).</p>
-          </header>
-          <div class="auth-form__field" style="margin-bottom: var(--space-4)">
-            <label class="auth-label" for="fileImport">Fichero CSV</label>
-            <input type="file" id="fileImport" accept=".csv,text/csv" class="auth-input" />
-          </div>
-          <button type="button" class="clinic-btn clinic-btn--primary" id="btnImport">Importar lote</button>
-          <pre id="importOut" class="imports-pre" hidden></pre>
-        </article>
-      </div>
+      <article class="portal-card clinic-card dash-card pipeline-hero-card imports-sec" id="pipelineCard">
+        <header class="dash-card__head pipeline-hero-card__head">
+          <h2 class="dash-card__title">Pipeline guiado</h2>
+          <p class="dash-card__sub">Limpieza → ingesta en BD → transformación → análisis → modelo de enfermedad</p>
+        </header>
 
-      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)">
+        <div class="pipeline-upload">
+          <label class="auth-label" for="filePreview">Fichero CSV</label>
+          <div class="imports-file-row">
+            <input type="file" id="filePreview" accept=".csv,text/csv" class="auth-input imports-file-input" />
+          </div>
+          <p class="imports-file-hint" id="importsFileHint">Seleccione un CSV o use un fichero de referencia.</p>
+          <div class="csv-samples" id="csvSamples">
+            <p class="csv-samples__title">Ficheros de referencia</p>
+            <p class="csv-samples__hint">
+              Recomendado: <strong>Enfermedades (ML)</strong> · puedes repetir el mismo fichero.
+            </p>
+            <ul class="csv-samples__list">
+              <li>
+                <button type="button" class="csv-sample-chip csv-sample-chip--featured" data-sample="/samples/referencia_enfermedades.csv">
+                  Enfermedades (ML) ★
+                </button>
+              </li>
+              <li><button type="button" class="csv-sample-chip" data-sample="/samples/referencia_pacientes.csv">Pacientes</button></li>
+              <li><button type="button" class="csv-sample-chip" data-sample="/samples/referencia_urgencias.csv">Urgencias</button></li>
+              <li><button type="button" class="csv-sample-chip" data-sample="/samples/referencia_calidad.csv">Calidad</button></li>
+              <li><button type="button" class="csv-sample-chip" data-sample="/samples/referencia_citas.csv">Citas</button></li>
+              <li><button type="button" class="csv-sample-chip" data-sample="/samples/ingesta_demo_1.csv">Demo 1</button></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="clinic-card__body pipeline-body">
+          <div class="pipeline-rail" aria-hidden="true">
+            <div class="pipeline-rail__track">
+              <div class="pipeline-rail__fill" id="pipelineRailFill"></div>
+            </div>
+          </div>
+          <p class="pipeline-guide" id="pipelineGuide" role="status">Selecciona un CSV y pulsa iniciar.</p>
+          <p id="status" class="clinic-alert portal-status imports-status" role="status" aria-live="polite"></p>
+          <button type="button" class="clinic-btn clinic-btn--primary pipeline-hero-btn" id="btnFullPipeline">
+            Iniciar pipeline completo
+          </button>
+          <ol class="pipeline-steps" id="pipelineSteps" aria-label="Progreso del pipeline">
+            <li class="pipeline-step pipeline-step--pending" data-stage="clean">
+              <span class="pipeline-step__badge">1</span>
+              <span class="pipeline-step__body">
+                <p class="pipeline-step__title">Limpieza y calidad</p>
+                <p class="pipeline-step__msg">En espera…</p>
+              </span>
+            </li>
+            <li class="pipeline-step pipeline-step--pending" data-stage="ingest">
+              <span class="pipeline-step__badge">2</span>
+              <span class="pipeline-step__body">
+                <p class="pipeline-step__title">Ingesta en PostgreSQL</p>
+                <p class="pipeline-step__msg">En espera…</p>
+              </span>
+            </li>
+            <li class="pipeline-step pipeline-step--pending" data-stage="transform">
+              <span class="pipeline-step__badge">3</span>
+              <span class="pipeline-step__body">
+                <p class="pipeline-step__title">Transformación</p>
+                <p class="pipeline-step__msg">En espera…</p>
+              </span>
+            </li>
+            <li class="pipeline-step pipeline-step--pending" data-stage="analyze">
+              <span class="pipeline-step__badge">4</span>
+              <span class="pipeline-step__body">
+                <p class="pipeline-step__title">Análisis agregado</p>
+                <p class="pipeline-step__msg">En espera…</p>
+              </span>
+            </li>
+            <li class="pipeline-step pipeline-step--pending" data-stage="ml">
+              <span class="pipeline-step__badge">5</span>
+              <span class="pipeline-step__body">
+                <p class="pipeline-step__title">Modelo ML (árbol + CV)</p>
+                <p class="pipeline-step__msg">En espera…</p>
+              </span>
+            </li>
+          </ol>
+          <p class="imports-scroll-hint">↓ Más abajo: lotes importados, agregados Spark, detalle y modelo predictivo</p>
+
+          <div class="imports-result-grid" id="pipelineResults" hidden aria-hidden="true">
+            <article class="imports-result-card" id="syncResultCard">
+              <h3 class="imports-result-card__title">Guardado en PostgreSQL</h3>
+              <div class="imports-kpi-row" id="syncKpis"></div>
+            </article>
+            <article class="imports-result-card" id="mlResultCard">
+              <h3 class="imports-result-card__title">Resumen modelo (CV)</h3>
+              <div class="imports-kpi-row" id="mlKpis"></div>
+              <p class="imports-result-card__hint" id="mlHint"></p>
+              <button type="button" class="clinic-btn clinic-btn--ghost clinic-btn--sm" id="btnGoMlStudio">
+                Ver panel completo del modelo ↓
+              </button>
+            </article>
+          </div>
+
+          <details class="pipeline-details" id="pipelineDetails" hidden>
+            <summary>Respuesta técnica (JSON)</summary>
+            <pre id="pipelineOut" class="imports-pre pipeline-out"></pre>
+          </details>
+        </div>
+      </article>
+
+      <details class="imports-advanced imports-sec portal-card clinic-card" id="sec-tools" open>
+        <summary>Herramientas avanzadas (vista previa e importación manual)</summary>
+        <div class="clinic-grid-2 imports-advanced__grid">
+          <article class="portal-card clinic-card dash-card">
+            <header class="dash-card__head">
+              <h2 class="dash-card__title">Vista previa</h2>
+              <p class="dash-card__sub">Sin guardar en base de datos</p>
+            </header>
+            <div class="clinic-card__body">
+              <button type="button" class="clinic-btn clinic-btn--ghost" id="btnPreview">Generar vista previa</button>
+              <div id="previewVisual" class="imports-visual" hidden></div>
+            </div>
+          </article>
+          <article class="portal-card clinic-card dash-card">
+            <header class="dash-card__head">
+              <h2 class="dash-card__title">Importar solo lote</h2>
+              <p class="dash-card__sub">Sin pipeline completo</p>
+            </header>
+            <div class="clinic-card__body">
+              <button type="button" class="clinic-btn clinic-btn--ghost" id="btnImport">Importar lote</button>
+              <div id="importVisual" class="imports-visual" hidden></div>
+            </div>
+          </article>
+        </div>
+      </details>
+
+      <article class="portal-card clinic-card dash-card imports-sec" id="sec-lotes">
         <header class="dash-card__head">
-          <h2 class="dash-card__title">3. Lotes recientes</h2>
+          <h2 class="dash-card__title">Lotes recientes</h2>
           <p class="dash-card__sub">
-            <code>GET /imports/csv</code> · Total: <strong id="batchTotal">—</strong>
-            <button type="button" class="dash-hero__logout" id="btnRefresh" style="margin-left: 12px">Actualizar</button>
+            Total: <strong id="batchTotal">—</strong>
+            <button type="button" class="dash-hero__logout" id="btnRefresh">Actualizar</button>
           </p>
         </header>
-        <div style="overflow-x: auto">
-          <table class="imports-table" id="batchTable" aria-label="Lotes importados">
+        <div class="patients-table-wrap">
+          <table class="imports-table data-table" id="batchTable">
             <thead>
               <tr>
                 <th>Fecha</th>
                 <th>Fichero</th>
                 <th>Filas</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="batchTbody"></tbody>
           </table>
         </div>
-        <p id="batchEmpty" class="dash-card__sub" hidden>Sin lotes todavía. Importe un CSV o genere uno de prueba.</p>
+        <p id="batchEmpty" class="dash-card__sub" hidden>Sin lotes todavía.</p>
       </article>
 
-      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)" id="cardSpark">
+      <article class="portal-card clinic-card dash-card imports-sec" id="sec-spark">
         <header class="dash-card__head">
-          <h2 class="dash-card__title">4. Agregados PySpark (capa analítica)</h2>
+          <h2 class="dash-card__title">Agregados analíticos</h2>
           <p class="dash-card__sub">
-            El contenedor <code>spark-csv-aggregate</code> recalcula métricas sobre
-            <code>csv_import_rows</code>. Vista vía <code>GET /stats/csv-aggregates</code> y salud en
-            <code>GET /health/pipeline</code>.
-            <button type="button" class="dash-hero__logout" id="btnSparkRefresh" style="margin-left: 12px">
-              Actualizar métricas
-            </button>
+            Transformación por lote
+            <button type="button" class="dash-hero__logout" id="btnSparkRefresh">Actualizar</button>
           </p>
         </header>
-        <div id="sparkSummary" class="imports-spark-summary" aria-live="polite"></div>
-        <div style="overflow-x: auto; margin-top: var(--space-4)">
-          <table class="imports-table" id="sparkTopTable" aria-label="Top lotes por filas agregadas">
+        <div id="sparkSummary" class="imports-spark-summary"></div>
+        <div class="patients-table-wrap">
+          <table class="imports-table data-table" id="sparkTopTable">
             <thead>
               <tr>
-                <th>Lote (batch_id)</th>
+                <th>Lote</th>
                 <th>Filas</th>
-                <th>Barra relativa</th>
+                <th>Volumen</th>
               </tr>
             </thead>
             <tbody id="sparkTopTbody"></tbody>
           </table>
         </div>
-        <p id="sparkEmpty" class="dash-card__sub" hidden>Aún no hay agregados (esperar el job Spark o importar CSV).</p>
+        <p id="sparkEmpty" class="dash-card__sub" hidden>Sin agregados todavía.</p>
       </article>
 
-      <article class="portal-card clinic-card dash-card" style="margin-top: var(--space-5)">
+      <article class="portal-card clinic-card dash-card imports-detail-panel imports-sec" id="sec-detail">
         <header class="dash-card__head">
-          <h2 class="dash-card__title">5. Detalle del lote</h2>
-          <p class="dash-card__sub">
-            <code>GET /imports/csv/{batch_id}</code>,
-            <code>GET /imports/csv/{batch_id}/quality-issues</code> y
-            <code>GET /imports/csv/{batch_id}/export</code>
-          </p>
+          <h2 class="dash-card__title">Detalle del lote</h2>
         </header>
-        <pre id="detailOut" class="imports-pre">Seleccione un lote en la tabla.</pre>
+        <div id="detailVisual" class="imports-visual imports-visual--detail">Seleccione un lote en la tabla.</div>
       </article>
 
-      <p id="status" class="clinic-alert portal-status" role="status" aria-live="polite"></p>
+      <details class="portal-card clinic-card dash-card imports-ml-details imports-sec" id="mlStudioDetails" open>
+        <summary class="imports-ml-details__summary">
+          <span class="imports-ml-details__title">Modelo predictivo de enfermedad</span>
+          <span class="imports-ml-details__tag">Árbol de decisiones · CV</span>
+        </summary>
+        <div class="imports-ml-details__body" id="mlStudio">
+          <div class="imports-ml-toolbar">
+            <p class="imports-ml-toolbar__sub" id="mlStudioSub">Features: edad, sexo, departamento</p>
+            <div class="imports-ml-toolbar__actions">
+              <button type="button" class="clinic-btn clinic-btn--primary" id="btnRetrainMl">Reentrenar modelo</button>
+              <button type="button" class="clinic-btn clinic-btn--ghost" id="btnRefreshMl">Actualizar métricas</button>
+            </div>
+          </div>
+          <p id="mlStudioStatus" class="imports-ml-status" role="status">Cargando…</p>
+
+          <div class="imports-ml-hero-metrics">
+            <div class="imports-ml-accuracy-ring" aria-hidden="true">
+              <svg viewBox="0 0 120 120">
+                <circle class="ml-studio__ring-bg" cx="60" cy="60" r="52" />
+                <circle class="ml-studio__ring-fg" cx="60" cy="60" r="52" id="mlAccuracyRingFg" />
+              </svg>
+              <div class="imports-ml-accuracy-ring__label">
+                <span id="mlAccuracyRingVal">—</span>
+                <small>Accuracy CV</small>
+              </div>
+            </div>
+            <div class="ml-studio__kpis" id="mlStudioKpis"></div>
+          </div>
+
+          <div class="ml-studio__charts">
+            <div class="ml-studio__chart-card ml-studio__chart-card--wide">
+              <h3>Accuracy por fold (validación cruzada)</h3>
+              <div class="ml-studio__chart-wrap">
+                <canvas id="chartCvScores"></canvas>
+                <div id="chartCvFallback" class="ml-chart-fallback" hidden></div>
+              </div>
+            </div>
+            <div class="ml-studio__chart-card">
+              <h3>Distribución de clases</h3>
+              <div class="ml-studio__chart-wrap">
+                <canvas id="chartClassDist"></canvas>
+                <div id="chartDistFallback" class="ml-chart-fallback" hidden></div>
+              </div>
+            </div>
+            <div class="ml-studio__chart-card">
+              <h3>F1 por enfermedad</h3>
+              <div class="ml-studio__chart-wrap">
+                <canvas id="chartClassF1"></canvas>
+                <div id="chartF1Fallback" class="ml-chart-fallback" hidden></div>
+              </div>
+            </div>
+            <div class="ml-studio__chart-card">
+              <h3>Importancia de variables</h3>
+              <div class="ml-studio__chart-wrap">
+                <canvas id="chartFeatImp"></canvas>
+                <div id="chartFeatFallback" class="ml-chart-fallback" hidden></div>
+              </div>
+            </div>
+          </div>
+
+          <section class="ml-studio__matrix" id="mlConfusionSection" hidden>
+            <h3>Matriz de confusión</h3>
+            <p class="ml-studio__matrix-hint">Filas = real · Columnas = predicción</p>
+            <div id="mlConfusionWrap" class="ml-confusion-wrap"></div>
+          </section>
+
+          <section class="ml-studio__predictions">
+            <header class="ml-studio__predictions-head">
+              <h3>Predicciones recientes</h3>
+              <span class="ml-studio__predictions-badge" id="mlPredictionsCount">—</span>
+            </header>
+            <div class="patients-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Paciente</th><th>Predicción</th><th>Confianza</th></tr>
+                </thead>
+                <tbody id="mlPredictionsTbody"></tbody>
+              </table>
+            </div>
+            <p id="mlPredictionsEmpty" class="ml-studio__empty" hidden>Sin predicciones todavía.</p>
+          </section>
+        </div>
+      </details>
+
     </main>
 
-    <script src="/portal.js"></script>
-    <script src="/imports.js"></script>
+    <script src="/portal.js?v=20260518btn"></script>
+    <script src="/imports.js?v=20260518btn"></script>
   </body>
 </html>

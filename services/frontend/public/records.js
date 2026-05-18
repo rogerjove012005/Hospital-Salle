@@ -25,8 +25,7 @@ function renderStudy(s) {
     : `Sin ficha clínica vinculada · ${me.email}`;
 
   try {
-    const studies = await apiJson("/studies/me");
-    const list = Array.isArray(studies) ? studies : [];
+    const list = await apiJsonList("/studies/me");
     portalQs("#recordsList").innerHTML = list.length
       ? list.map(renderStudy).join("")
       : `<li class="records-item records-item--empty">No hay estudios en su expediente todavía.</li>`;

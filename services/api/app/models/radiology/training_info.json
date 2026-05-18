@@ -1,0 +1,15 @@
+{
+  "classes": [
+    "SANA",
+    "NEUMONIA",
+    "COVID-19"
+  ],
+  "iterations_trained": 26,
+  "final_val_accuracy": 0.9470404984423674,
+  "final_loss": 8.352836039070906e-05,
+  "class_weights": {
+    "0": 1.0,
+    "1": 1.2,
+    "2": 1.6
+  }
+}

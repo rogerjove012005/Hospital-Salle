@@ -324,6 +324,31 @@ btnLogout.addEventListener("click", () => {
   setStatus("Sesión cerrada.", "ok");
 });
 
+async function purgeInvalidSession() {
+  const token = getToken();
+  if (!token || token === "undefined" || token === "null") {
+    setToken(null);
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const text = await res.text();
+    let body = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = null;
+    }
+    if (!res.ok || !body || typeof body.role !== "string" || !body.email) {
+      setToken(null);
+    }
+  } catch {
+    setToken(null);
+  }
+}
+
 async function boot() {
   try {
     await api("/health");
@@ -331,6 +356,8 @@ async function boot() {
   } catch {
     setStatus("No se puede conectar con el servidor.", "error");
   }
+
+  await purgeInvalidSession();
 
   if (getToken() && !shouldSkipLandingRedirect()) {
     goToLanding();

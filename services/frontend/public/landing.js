@@ -88,15 +88,15 @@ function applyRoleDashboard(me, detail) {
 async function loadDashboardMetrics(me) {
   try {
     if (me.role === "paciente") {
-      const studies = await apiJson("/studies/me");
-      const count = Array.isArray(studies) ? studies.length : 0;
+      const studies = await apiJsonList("/studies/me");
+      const count = studies.length;
       if (mTertiaryValue) mTertiaryValue.textContent = String(count);
       if (mSecondaryValue) mSecondaryValue.textContent = count ? "Registrada" : "—";
       return;
     }
     if (me.role === "medico" || me.role === "admin") {
-      const patients = await apiJson("/patients");
-      const count = Array.isArray(patients) ? patients.length : 0;
+      const patients = await apiJsonList("/patients");
+      const count = patients.length;
       if (mTertiaryValue) mTertiaryValue.textContent = String(count);
     }
   } catch {

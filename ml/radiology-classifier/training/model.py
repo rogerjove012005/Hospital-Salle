@@ -18,7 +18,7 @@ class RadiologyModel:
         self.img_size = img_size
         self.pipeline = None
 
-    def build_model(self, n_pca_components=100):
+    def build_model(self, n_pca_components=150):
         """
         Pipeline:
         1. StandardScaler  — normaliza features (necesario para PCA)
@@ -29,16 +29,16 @@ class RadiologyModel:
             ('scaler', StandardScaler()),
             ('pca', PCA(n_components=n_pca_components, random_state=42)),
             ('classifier', MLPClassifier(
-                hidden_layer_sizes=(256, 128, 64),
+                hidden_layer_sizes=(384, 192, 96),
                 activation='relu',
                 solver='adam',
-                alpha=1e-4,
+                alpha=5e-5,
                 learning_rate='adaptive',
-                max_iter=300,
+                max_iter=450,
                 random_state=42,
                 early_stopping=True,
-                validation_fraction=0.1,
-                n_iter_no_change=15,
+                validation_fraction=0.12,
+                n_iter_no_change=20,
                 verbose=False,
             ))
         ])

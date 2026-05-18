@@ -1,0 +1,22 @@
+DATOS DE PRUEBA — laSalle Health Center
+========================================
+
+Carpeta visible para la demo (datos sintéticos, sin pacientes reales).
+
+RUTAS EN FINDER (desde la raíz del proyecto Proyecto_Hospital):
+
+  datos_prueba/csv/
+    - ingesta_demo_1.csv   → subir en Ingesta CSV (portal)
+    - ingesta_demo_2.csv   → segundo lote (contenido distinto)
+
+  datos_prueba/radiografias/
+    - radiografia_sana_demo.png
+    - radiografia_neumonia_demo.png
+    - radiografia_covid_demo.png
+    - chest_xray/                  → dataset Chest X-Ray (NORMAL / PNEUMONIA)
+      Preparar + entrenar modelo: python3 scripts/prepare_radiology_dataset.py --train
+      Galería portal: python3 scripts/sync_radiology_samples.py
+
+También existe: data/demo/ (misma copia)
+
+Login médico: rogerjove012005@gmail.com / hospital

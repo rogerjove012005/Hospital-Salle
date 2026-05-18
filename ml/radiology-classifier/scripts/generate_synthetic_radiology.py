@@ -25,7 +25,13 @@ def _base_canvas(h: int, w: int, rng: np.random.Generator) -> np.ndarray:
 
 def _sana_patch(h: int, w: int, rng: np.random.Generator) -> np.ndarray:
     img = _base_canvas(h, w, rng)
-    img += 0.04 * rng.random((h, w), dtype=np.float32)
+    img += 0.02 * rng.random((h, w), dtype=np.float32)
+    # Campos pulmonares simétricos y homogéneos
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    for side in (-1.0, 1.0):
+        cx = w * 0.5 + side * w * 0.18
+        field = np.exp(-(((xx - cx) / (w * 0.22)) ** 2 + ((yy - h * 0.5) / (h * 0.35)) ** 2))
+        img += 0.03 * field.astype(np.float32)
     return np.clip(img, 0.0, 1.0)
 
 
@@ -38,8 +44,8 @@ def _neumonia_patch(h: int, w: int, rng: np.random.Generator) -> np.ndarray:
         cx = rng.uniform(w * 0.15, w * 0.55)
         sig = rng.uniform(w * 0.08, w * 0.18)
         blob = np.exp(-((yy - cy) ** 2 + (xx - cx) ** 2) / (sig**2)).astype(np.float32)
-        img += 0.12 * blob * rng.uniform(0.6, 1.0)
-    img += rng.normal(0.0, 0.035, size=(h, w)).astype(np.float32)
+        img += 0.22 * blob * rng.uniform(0.75, 1.0)
+    img += rng.normal(0.0, 0.04, size=(h, w)).astype(np.float32)
     return np.clip(img, 0.0, 1.0)
 
 
@@ -54,8 +60,13 @@ def _covid_patch(h: int, w: int, rng: np.random.Generator) -> np.ndarray:
         haze = np.exp(-(((xx - cx - off) / sx) ** 2 + ((yy - h * 0.48) / sy) ** 2)).astype(
             np.float32
         )
-        img += rng.uniform(0.05, 0.11) * haze
-    img += rng.normal(0.0, 0.04, size=(h, w)).astype(np.float32)
+        img += rng.uniform(0.12, 0.2) * haze
+    # Vidrio esmerilado periférico bilateral (patrón COVID)
+    rim = np.exp(-((yy - h * 0.5) ** 2) / (h * 0.55) ** 2) * np.exp(
+        -((xx - w * 0.5) ** 2) / (w * 0.42) ** 2
+    )
+    img += 0.08 * (1.0 - rim).astype(np.float32)
+    img += rng.normal(0.0, 0.045, size=(h, w)).astype(np.float32)
     return np.clip(img, 0.0, 1.0)
 
 
@@ -85,7 +96,7 @@ def write_synthetic_class(
     return out_dir
 
 
-def generate_all(seed: int = 42, n_per_class: int = 48, img_size: int = 224) -> Path:
+def generate_all(seed: int = 42, n_per_class: int = 96, img_size: int = 224) -> Path:
     root = Path(__file__).resolve().parent.parent / "data" / "synthetic"
     rng = np.random.default_rng(seed)
 

@@ -1,0 +1,3 @@
+patient_reference,department,severity_label,oxygen_sat_pct,comments
+DEMO-P001,Urgencias,observation,97,Prueba ingesta demo 1
+DEMO-P002,Radiología,routine,95,Lote académico laSalle

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Usuarios registrados — laSalle Health Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=20260518a" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="app-body" data-portal-page="users" data-portal-title="Usuarios">
+    <main class="app-main" id="usersTop">
+      <article class="portal-card clinic-card clinic-page-head">
+        <header class="portal-card__head">
+          <span class="portal-card__badge">Administración</span>
+          <h1 class="clinic-header__title">Usuarios registrados</h1>
+          <p class="clinic-header__sub" id="usersSub">Cuentas con acceso al portal hospitalario.</p>
+        </header>
+      </article>
+
+      <div class="clinic-stats-row" id="usersStats" aria-label="Resumen de usuarios"></div>
+
+      <article class="portal-card clinic-card dash-card users-card">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">Directorio de cuentas</h2>
+          <p class="dash-card__sub">Persistidos en PostgreSQL · login y registro</p>
+        </header>
+        <div class="clinic-card__body">
+          <div class="data-toolbar">
+            <label class="data-toolbar__search">
+              <span class="visually-hidden">Buscar</span>
+              <input type="search" id="usersSearch" placeholder="Buscar por correo o nombre…" autocomplete="off" />
+            </label>
+            <p class="data-toolbar__count" id="usersCount"></p>
+          </div>
+          <div class="patients-table-wrap">
+            <table class="data-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th scope="col">Correo</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Rol</th>
+                  <th scope="col">ID clínico</th>
+                  <th scope="col">Alta</th>
+                  <th scope="col">Último acceso</th>
+                </tr>
+              </thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+      <p id="status" class="clinic-alert portal-status" role="status"></p>
+    </main>
+    <script src="/portal.js"></script>
+    <script src="/users.js"></script>
+  </body>
+</html>

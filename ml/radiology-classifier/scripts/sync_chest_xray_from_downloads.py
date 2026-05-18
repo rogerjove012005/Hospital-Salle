@@ -54,13 +54,22 @@ def _copy_samples(src_dir: Path, dst_dir: Path, max_n: int, seed: int) -> int:
     return len(take)
 
 
+def _default_chest_source() -> Path:
+    """Preferir dataset del repo (datos_prueba) frente a ~/Downloads."""
+    pkg = Path(__file__).resolve().parent.parent
+    repo_train = pkg.parent.parent / "datos_prueba" / "radiografias" / "chest_xray" / "train"
+    if (repo_train / "NORMAL").is_dir():
+        return repo_train
+    return Path.home() / "Downloads" / "chest_xray" / "train"
+
+
 def main() -> None:
     _ensure_pkg_root()
     ap = argparse.ArgumentParser(description="Montar data/cxr_local desde Chest X-Ray + COVID sintético")
     ap.add_argument(
         "--source",
         type=Path,
-        default=Path.home() / "Downloads" / "chest_xray" / "train",
+        default=None,
         help="Carpeta train del dataset (debe contener NORMAL/ y PNEUMONIA/)",
     )
     ap.add_argument(
@@ -75,7 +84,7 @@ def main() -> None:
     args = ap.parse_args()
 
     pkg = Path(__file__).resolve().parent.parent
-    source = Path(args.source).expanduser()
+    source = Path(args.source).expanduser() if args.source else _default_chest_source()
     dest = pkg / args.dest
 
     if dest.is_dir():

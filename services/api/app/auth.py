@@ -311,6 +311,11 @@ def authenticate(email: str, password: str) -> tuple[str, Role, str | None, str 
 
 def login(req: LoginRequest) -> TokenResponse:
     user_id, role, _patient_id, _medico_id = authenticate(req.email, req.password)
+    with engine().begin() as conn:
+        conn.execute(
+            text("UPDATE app_users SET last_login_at = NOW() WHERE user_id = :uid"),
+            {"uid": user_id},
+        )
     return TokenResponse(access_token=create_access_token(sub=user_id, role=role))
 
 
@@ -629,7 +634,21 @@ def list_users() -> list[dict[str, Any]]:
     with engine().connect() as conn:
         rows = conn.execute(
             text(
-                "SELECT user_id, email, role, patient_id, medico_id, created_at FROM app_users ORDER BY created_at DESC"
+                """
+                SELECT
+                  u.user_id,
+                  u.email,
+                  u.role,
+                  u.patient_id,
+                  u.medico_id,
+                  u.created_at,
+                  u.last_login_at,
+                  COALESCE(p.full_name, m.full_name) AS display_name
+                FROM app_users u
+                LEFT JOIN patients p ON u.patient_id = p.patient_id
+                LEFT JOIN medicos m ON u.medico_id = m.medico_id
+                ORDER BY u.created_at DESC
+                """
             )
         ).mappings().all()
     return [dict(r) for r in rows]

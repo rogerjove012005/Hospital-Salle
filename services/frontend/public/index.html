@@ -11,8 +11,16 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260426h" />
+    <link rel="stylesheet" href="/styles.css?v=20260518a" />
     <script src="/config.js"></script>
+    <script>
+      (function () {
+        if (new URLSearchParams(location.search).get("logout") === "1") {
+          localStorage.removeItem("access_token");
+          sessionStorage.removeItem("access_token");
+        }
+      })();
+    </script>
   </head>
   <body class="auth-body">
     <a class="skip-link" href="#authCard">Saltar al formulario de acceso</a>

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Altas clínicas — laSalle Health Center</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260518dir2" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="app-body directory-page" data-portal-page="directory" data-portal-title="Altas clínicas">
+    <main class="app-main directory-main" id="directoryTop">
+      <section class="directory-hero" aria-labelledby="directoryTitle">
+        <div class="directory-hero__glow" aria-hidden="true"></div>
+        <div class="directory-hero__content">
+          <p class="directory-hero__eyebrow">Operaciones hospitalarias</p>
+          <h1 class="directory-hero__title" id="directoryTitle">Altas clínicas</h1>
+          <p class="directory-hero__lead" id="directorySub">
+            Registro directo en PostgreSQL · pacientes y personal médico
+          </p>
+          <ul class="directory-hero__chips" aria-label="Destinos en base de datos">
+            <li>patients</li>
+            <li>medicos</li>
+            <li>app_users</li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="directory-tabs-wrap">
+        <div class="directory-tabs" role="tablist" aria-label="Tipo de alta">
+          <button
+            type="button"
+            class="directory-tab directory-tab--active"
+            role="tab"
+            id="tabPatient"
+            aria-selected="true"
+            aria-controls="panelPatient"
+            data-directory-tab="patient"
+          >
+            <span class="directory-tab__icon" aria-hidden="true">👤</span>
+            Nuevo paciente
+          </button>
+          <button
+            type="button"
+            class="directory-tab"
+            role="tab"
+            id="tabMedico"
+            aria-selected="false"
+            aria-controls="panelMedico"
+            data-directory-tab="medico"
+          >
+            <span class="directory-tab__icon" aria-hidden="true">🩺</span>
+            Nuevo médico
+          </button>
+        </div>
+
+        <article
+          class="portal-card clinic-card directory-panel directory-panel--active"
+          id="panelPatient"
+          role="tabpanel"
+          aria-labelledby="tabPatient"
+        >
+          <form class="directory-form" id="formPatient">
+            <fieldset class="directory-fieldset">
+              <legend>Datos personales</legend>
+              <label class="auth-label" for="patName">Nombre completo</label>
+              <input id="patName" class="auth-input" required maxlength="120" autocomplete="name" />
+
+              <div class="directory-form__row">
+                <div>
+                  <label class="auth-label" for="patAge">Edad</label>
+                  <input id="patAge" type="number" min="0" max="130" class="auth-input" required />
+                </div>
+                <div>
+                  <label class="auth-label" for="patSex">Sexo</label>
+                  <select id="patSex" class="auth-input" required>
+                    <option value="F">Femenino</option>
+                    <option value="M">Masculino</option>
+                    <option value="O">Otro</option>
+                  </select>
+                </div>
+              </div>
+
+              <label class="auth-label" for="patPhone">Teléfono</label>
+              <input id="patPhone" class="auth-input" type="tel" placeholder="+34 600 000 000" />
+            </fieldset>
+
+            <fieldset class="directory-fieldset">
+              <legend>Datos clínicos</legend>
+              <label class="auth-label" for="patDept">Departamento</label>
+              <input id="patDept" class="auth-input" list="deptSuggestions" placeholder="Urgencias, Cardiología…" />
+              <datalist id="deptSuggestions">
+                <option value="Urgencias"></option>
+                <option value="Cardiología"></option>
+                <option value="Medicina interna"></option>
+                <option value="UCI"></option>
+                <option value="Hospitalización"></option>
+              </datalist>
+
+              <label class="auth-label" for="patDiag">Enfermedad / diagnóstico principal</label>
+              <input id="patDiag" class="auth-input" list="diagSuggestions" placeholder="hipertension, neumonia_grave…" />
+              <datalist id="diagSuggestions">
+                <option value="hipertension"></option>
+                <option value="neumonia_grave"></option>
+                <option value="cardiopatia"></option>
+                <option value="control_rutinario"></option>
+                <option value="patologia_respiratoria"></option>
+              </datalist>
+
+              <p class="directory-hint">Estos campos alimentan el modelo de predicción de enfermedad.</p>
+            </fieldset>
+
+            <fieldset class="directory-fieldset directory-fieldset--portal">
+              <legend>Acceso al portal (opcional)</legend>
+              <label class="directory-toggle">
+                <input type="checkbox" id="patPortal" />
+                <span class="directory-toggle__track" aria-hidden="true"></span>
+                <span class="directory-toggle__label">Crear usuario paciente con email y contraseña</span>
+              </label>
+              <div id="patPortalFields" class="directory-portal-fields" hidden>
+                <label class="auth-label" for="patEmail">Email académico</label>
+                <input id="patEmail" type="email" class="auth-input" placeholder="nombre@universidad.edu" />
+                <label class="auth-label" for="patPass">Contraseña</label>
+                <input
+                  id="patPass"
+                  type="password"
+                  class="auth-input"
+                  autocomplete="new-password"
+                  placeholder="Mín. 8 caracteres, mayúscula, número y símbolo"
+                />
+              </div>
+            </fieldset>
+
+            <div class="directory-form__actions">
+              <button type="submit" class="clinic-btn clinic-btn--primary directory-submit">
+                Registrar paciente
+              </button>
+              <button type="reset" class="clinic-btn clinic-btn--ghost">Limpiar formulario</button>
+              <p id="patStatus" class="directory-form-status" role="status"></p>
+            </div>
+          </form>
+        </article>
+
+        <article
+          class="portal-card clinic-card directory-panel"
+          id="panelMedico"
+          role="tabpanel"
+          aria-labelledby="tabMedico"
+          hidden
+        >
+          <form class="directory-form" id="formMedico">
+            <fieldset class="directory-fieldset">
+              <legend>Datos del médico</legend>
+              <label class="auth-label" for="medName">Nombre completo</label>
+              <input id="medName" class="auth-input" required maxlength="120" autocomplete="name" />
+
+              <div class="directory-form__row">
+                <div>
+                  <label class="auth-label" for="medSex">Sexo</label>
+                  <select id="medSex" class="auth-input">
+                    <option value="">Sin especificar</option>
+                    <option value="F">Femenino</option>
+                    <option value="M">Masculino</option>
+                    <option value="O">Otro</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="auth-label" for="medPhone">Teléfono</label>
+                  <input id="medPhone" class="auth-input" type="tel" />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="directory-fieldset directory-fieldset--portal">
+              <legend>Cuenta de acceso</legend>
+              <label class="auth-label" for="medEmail">Email académico</label>
+              <input id="medEmail" type="email" class="auth-input" required placeholder="medico@universidad.edu" />
+
+              <label class="auth-label" for="medPass">Contraseña</label>
+              <input
+                id="medPass"
+                type="password"
+                class="auth-input"
+                required
+                autocomplete="new-password"
+                placeholder="Mín. 8 caracteres, mayúscula, número y símbolo"
+              />
+            </fieldset>
+
+            <div class="directory-form__actions">
+              <button type="submit" class="clinic-btn clinic-btn--primary directory-submit">
+                Registrar médico
+              </button>
+              <button type="reset" class="clinic-btn clinic-btn--ghost">Limpiar formulario</button>
+              <p id="medStatus" class="directory-form-status" role="status"></p>
+            </div>
+          </form>
+
+          <div id="medicoDenied" class="directory-denied-card" hidden>
+            <p class="directory-denied-card__title">Solo administradores</p>
+            <p class="directory-denied-card__text">
+              Tu rol de médico puede dar de alta pacientes. El alta de personal médico requiere permisos de administrador.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <article class="portal-card clinic-card dash-card directory-list-card">
+        <header class="dash-card__head directory-list-card__head">
+          <div>
+            <h2 class="dash-card__title">Pacientes en el sistema</h2>
+            <p class="dash-card__sub">Últimos registros · tabla <code>patients</code></p>
+          </div>
+          <div class="directory-list-card__actions">
+            <span class="directory-count" id="patientsCount">—</span>
+            <button type="button" class="clinic-btn clinic-btn--ghost clinic-btn--sm" id="btnRefreshPatients">
+              Actualizar
+            </button>
+          </div>
+        </header>
+        <div class="patients-table-wrap directory-table-wrap">
+          <table class="data-table directory-table" id="patientsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Depto.</th>
+                <th>Diagnóstico</th>
+              </tr>
+            </thead>
+            <tbody id="patientsTbody"></tbody>
+          </table>
+        </div>
+        <p id="patientsEmpty" class="directory-empty" hidden>No hay pacientes registrados todavía.</p>
+      </article>
+
+      <p id="status" class="clinic-alert portal-status directory-status" role="status"></p>
+    </main>
+    <script src="/portal.js?v=20260518dir2"></script>
+    <script src="/directory.js?v=20260518dir2"></script>
+  </body>
+</html>

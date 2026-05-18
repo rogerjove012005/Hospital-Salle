@@ -54,8 +54,14 @@ class DataPreprocessor:
                 # Redimensionar
                 img = img.resize((self.img_size, self.img_size))
 
-                # Convertir a array normalizado
-                img_array = np.array(img) / 255.0
+                # Equalización de histograma (mejor contraste en RX sintéticas/reales)
+                u8 = np.array(img, dtype=np.uint8)
+                hist, _ = np.histogram(u8.flatten(), 256, [0, 256])
+                cdf = hist.cumsum().astype(np.float64)
+                if cdf[-1] > 0:
+                    cdf = (cdf - cdf.min()) * 255.0 / max(cdf.max() - cdf.min(), 1.0)
+                    u8 = cdf[u8].astype(np.uint8)
+                img_array = u8.astype(np.float32) / 255.0
 
                 # Convertir a 3 canales (para modelos RGB)
                 img_array = np.stack([img_array] * 3, axis=-1)

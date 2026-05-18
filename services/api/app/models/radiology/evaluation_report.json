@@ -1,0 +1,58 @@
+{
+  "accuracy": 0.9416666666666667,
+  "confusion_matrix": [
+    [
+      71,
+      9,
+      0
+    ],
+    [
+      5,
+      75,
+      0
+    ],
+    [
+      0,
+      0,
+      80
+    ]
+  ],
+  "classification_report": {
+    "SANA": {
+      "precision": 0.9342105263157895,
+      "recall": 0.8875,
+      "f1-score": 0.9102564102564102,
+      "support": 80.0
+    },
+    "NEUMONIA": {
+      "precision": 0.8928571428571429,
+      "recall": 0.9375,
+      "f1-score": 0.9146341463414634,
+      "support": 80.0
+    },
+    "COVID-19": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 80.0
+    },
+    "accuracy": 0.9416666666666667,
+    "macro avg": {
+      "precision": 0.9423558897243108,
+      "recall": 0.9416666666666668,
+      "f1-score": 0.9416301855326245,
+      "support": 240.0
+    },
+    "weighted avg": {
+      "precision": 0.9423558897243108,
+      "recall": 0.9416666666666667,
+      "f1-score": 0.9416301855326246,
+      "support": 240.0
+    }
+  },
+  "class_names": [
+    "SANA",
+    "NEUMONIA",
+    "COVID-19"
+  ]
+}

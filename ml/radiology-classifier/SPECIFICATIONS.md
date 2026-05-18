@@ -257,8 +257,9 @@ python inference/clinical_analysis.py
 ## 10. Diario de Desarrollo IA
 
 ### Herramientas Utilizadas
-- **Claude (GitHub Copilot)**: Generación de arquitectura, debugging
-- **Justificación**: Velocidad de development, buena comprensión de dominio médico
+- **Cursor** (agente + edición asistida): arquitectura, scripts de training/evaluación, integración Docker
+- **Justificación**: contexto de repositorio completo, iteración rápida, documentación SDD alineada con código
+- Diario consolidado: [`docs/ai-dev-diary/DIARIO_DESARROLLO_IA.md`](../../docs/ai-dev-diary/DIARIO_DESARROLLO_IA.md)
 
 ### Proceso
 1. Especificación: Diseño de arquitectura basado en mejores prácticas

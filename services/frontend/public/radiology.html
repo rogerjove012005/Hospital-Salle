@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f766e" />
     <title>Radiología asistida — laSalle Health Center</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260516h" />
+    <link rel="stylesheet" href="/styles.css?v=20260518rx" />
     <script src="/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
   </head>
@@ -26,8 +26,36 @@
             <li class="rx-class-badge rx-class-badge--pne">Neumonía</li>
             <li class="rx-class-badge rx-class-badge--covid">COVID-19</li>
           </ul>
-          <div class="rx-hero-banner__actions">
-            <a href="#rxInfer" class="rx-cta rx-cta--primary">Subir radiografía</a>
+          <div class="rx-hero-upload" id="rxUpload">
+            <label class="rx-dropzone rx-dropzone--hero" for="fileRx">
+              <span class="rx-dropzone__title">Seleccionar radiografía</span>
+              <span class="rx-dropzone__hint" id="rxFileHint">PNG recomendado · hasta 8 MB · 224×224 px</span>
+              <input id="fileRx" type="file" accept="image/png,.png,image/jpeg,.jpg,.jpeg" class="rx-dropzone__input" />
+            </label>
+            <button type="button" class="rx-cta rx-cta--primary rx-cta--block" id="btnPredict">
+              Analizar radiografía
+            </button>
+            <div class="rx-samples" id="rxSamples">
+              <p class="rx-samples__title">Chest X-Ray (dataset real)</p>
+              <p class="rx-samples__hint">Pulsa una miniatura para cargarla y analizarla al instante.</p>
+              <div class="rx-gallery" id="rxChestGallery" aria-label="Galería Chest X-Ray">
+                <p class="rx-gallery__loading">Cargando radiografías…</p>
+              </div>
+              <details class="rx-samples-legacy">
+                <summary>Demos sintéticos (PNG rápidos)</summary>
+                <ul class="rx-samples__list">
+                  <li>
+                    <button type="button" class="rx-sample-chip" data-rx-sample="/samples/rx/rx_demo_sana.png">Sana</button>
+                  </li>
+                  <li>
+                    <button type="button" class="rx-sample-chip" data-rx-sample="/samples/rx/rx_demo_neumonia.png">Neumonía</button>
+                  </li>
+                  <li>
+                    <button type="button" class="rx-sample-chip" data-rx-sample="/samples/rx/rx_demo_covid.png">COVID-19</button>
+                  </li>
+                </ul>
+              </details>
+            </div>
           </div>
           <p class="rx-hero-banner__status clinic-alert" id="status" role="status"></p>
         </div>
@@ -42,47 +70,82 @@
 
       <ol class="rx-steps" aria-label="Pasos de uso">
         <li><span>1</span> Revise métricas del modelo</li>
-        <li><span>2</span> Seleccione imagen PNG/JPEG</li>
-        <li><span>3</span> Analice y documente el resultado</li>
+        <li><span>2</span> Suba la imagen en el banner superior</li>
+        <li><span>3</span> Revise el resultado a la derecha</li>
       </ol>
 
       <div class="clinic-grid-2 rx-workspace">
         <article class="portal-card clinic-card dash-card rx-card">
           <header class="dash-card__head">
-            <h2 class="dash-card__title">Métricas del modelo</h2>
-            <p class="dash-card__sub"><code>GET /radiology/metrics</code></p>
+            <h2 class="dash-card__title">Métricas del modelo (conjunto de prueba)</h2>
+            <p class="dash-card__sub">Fijas · no cambian al subir otra imagen · <code>GET /radiology/metrics</code></p>
           </header>
-          <div class="clinic-card__body">
-            <pre id="metricsOut" class="imports-pre rx-pre">Cargando…</pre>
+          <div class="clinic-card__body rx-metrics-body">
+            <p id="metricsStatus" class="rx-metrics-status" role="status">Cargando métricas…</p>
             <div class="chart-wrap chart-wrap--compact" id="rxF1Wrap" hidden>
-              <canvas id="chartRxF1Radiology" aria-label="F1 por clase"></canvas>
+              <canvas id="chartRxF1Radiology" aria-label="F1 por clase en conjunto de prueba"></canvas>
             </div>
-            <figure class="rx-matrix" id="rxMatrixWrap" hidden>
-              <img id="rxConfusionImg" alt="Matriz de confusión del modelo" width="320" height="320" />
-              <figcaption>Matriz de confusión (conjunto de prueba)</figcaption>
-            </figure>
+            <details class="rx-metrics-json">
+              <summary>Ver JSON técnico de métricas</summary>
+              <pre id="metricsOut" class="imports-pre rx-pre">Cargando…</pre>
+            </details>
           </div>
         </article>
         <article class="portal-card clinic-card dash-card rx-card rx-card--infer" id="rxInfer">
           <header class="dash-card__head">
-            <h2 class="dash-card__title">Inferencia clínica</h2>
-            <p class="dash-card__sub"><code>POST /radiology/predict</code></p>
+            <h2 class="dash-card__title">Resultado de esta radiografía</h2>
+            <p class="dash-card__sub">Se actualiza en cada análisis · <code>POST /radiology/predict</code></p>
           </header>
           <div class="clinic-card__body">
-            <label class="rx-dropzone" for="fileRx">
-              <span class="rx-dropzone__title">Seleccionar radiografía</span>
-              <span class="rx-dropzone__hint" id="rxFileHint">PNG o JPEG · 224×224 px</span>
-              <input id="fileRx" type="file" accept="image/png,image/jpeg" class="rx-dropzone__input" />
-            </label>
-            <button type="button" class="clinic-btn clinic-btn--primary rx-cta--block" id="btnPredict">
-              Analizar radiografía
-            </button>
-            <pre id="predictOut" class="imports-pre rx-pre rx-pre--result" hidden></pre>
+            <p id="predictEmpty" class="rx-results-empty">
+              Seleccione una radiografía en el banner superior y pulse «Analizar radiografía».
+            </p>
+            <div id="predictResults" class="rx-results" hidden>
+              <div class="rx-results__preview-wrap">
+                <img
+                  id="predictPreview"
+                  class="rx-results__preview"
+                  alt="Vista previa de la radiografía analizada"
+                  width="224"
+                  height="224"
+                />
+              </div>
+              <p id="predictMeta" class="rx-predict-meta" hidden></p>
+              <div class="chart-wrap chart-wrap--compact rx-predict-chart-wrap" id="rxPredictChartWrap" hidden>
+                <canvas id="chartRxPredict" aria-label="Probabilidades de la imagen analizada"></canvas>
+              </div>
+              <div id="predictExplain" class="rx-explain" aria-live="polite"></div>
+              <details class="rx-results__json">
+                <summary>Ver respuesta JSON técnica</summary>
+                <pre id="predictOut" class="imports-pre rx-pre rx-pre--result"></pre>
+              </details>
+            </div>
           </div>
         </article>
       </div>
+
+      <article class="portal-card clinic-card dash-card rx-card rx-card--matrix" id="rxMatrixSection">
+        <header class="dash-card__head">
+          <h2 class="dash-card__title">Matriz de confusión</h2>
+          <p class="dash-card__sub">Evaluación en conjunto de prueba · <code>GET /radiology/charts/confusion-matrix</code></p>
+        </header>
+        <div class="clinic-card__body">
+          <p id="rxMatrixStatus" class="rx-matrix-status">Cargando matriz…</p>
+          <div id="rxMatrixTableWrap" class="rx-matrix-table-wrap" hidden></div>
+          <figure class="rx-matrix" id="rxMatrixWrap">
+            <img id="rxConfusionImg" alt="Matriz de confusión del modelo" />
+            <figcaption>Filas = diagnóstico real · Columnas = predicción del modelo (conjunto de prueba)</figcaption>
+          </figure>
+        </div>
+      </article>
+      <footer class="rx-page-footer portal-card clinic-card" id="rxPageFooter">
+        <p class="rx-page-footer__hint">Reinicia el flujo de análisis y sube otra radiografía.</p>
+        <button type="button" class="clinic-btn clinic-btn--danger rx-cta--block" id="btnNewRx">
+          Radiografía nueva
+        </button>
+      </footer>
     </main>
-    <script src="/portal.js"></script>
-    <script src="/radiology.js"></script>
+    <script src="/portal.js?v=20260518k"></script>
+    <script src="/radiology.js?v=20260518cxr"></script>
   </body>
 </html>

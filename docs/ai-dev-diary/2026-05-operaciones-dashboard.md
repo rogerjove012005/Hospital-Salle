@@ -41,4 +41,5 @@ Completar los entregables parciales del enunciado: visualización, alertas, info
 ## Referencias
 
 - Enunciado práctica hospital · PDF curso.
-- [`docs/architecture/pipeline-dataflow.md`](../architecture/pipeline-dataflow.md)
+- [`docs/architecture/pipeline-dataflow.md`](../architecture/pipeline-dataflow.md) (flujo end-to-end)
+- [`docs/ai-dev-diary/DIARIO_DESARROLLO_IA.md`](DIARIO_DESARROLLO_IA.md) (diario consolidado)

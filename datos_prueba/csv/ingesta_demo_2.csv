@@ -1,0 +1,3 @@
+patient_reference,department,severity_label,oxygen_sat_pct,comments
+DEMO-P003,Hospitalización,high,91,Segundo CSV de prueba
+DEMO-P004,UCI,critical,88,Simulación monitorización

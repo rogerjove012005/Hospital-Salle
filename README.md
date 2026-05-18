@@ -91,7 +91,8 @@ El portal distingue tres perfiles. El administrador puede crear usuarios; pacien
 
 ## Módulo de IA — Clasificador de radiografías
 
-El módulo ML funciona de forma independiente al Docker; se ejecuta en local con Python.
+**Inferencia en Docker:** la API incluye el modelo entrenado (`POST /radiology/predict` desde el portal).  
+**Entrenamiento local:** el pipeline completo se ejecuta en tu máquina con Python (ver abajo).
 
 ### Instalación
 
@@ -165,7 +166,7 @@ ml/radiology-classifier/
 │           ├── index.html      # login / registro
 │           ├── landing.html    # dashboard del usuario autenticado
 │           └── app.js          # lógica del portal
-├── docs/                       # ADRs, ética, diario IA, specs
+├── docs/                       # Memoria, SDD, ADR, ética, diario IA (ver docs/README.md)
 ├── automation/                 # alertas, informes, movimiento de ficheros
 ├── pipelines/                  # ingestión, procesado, calidad, orquestación
 └── data/                       # datos raw / staging / processed / warehouse
@@ -215,6 +216,24 @@ La documentación interactiva completa está en http://localhost:8000/docs
 | `GET` | `/studies` | admin, médico | Todos los estudios radiológicos |
 | `GET` | `/studies/me` | paciente | Mis estudios |
 | `POST` | `/admin/users` | admin | Crear usuario manualmente |
+
+---
+
+## Documentación del proyecto
+
+| Documento | Descripción |
+|-----------|-------------|
+| [`docs/README.md`](docs/README.md) | Índice de toda la documentación |
+| [`docs/MEMORIA_TECNICA.md`](docs/MEMORIA_TECNICA.md) | Memoria técnica (apartados del enunciado) |
+| [`docs/ai-dev-diary/DIARIO_DESARROLLO_IA.md`](docs/ai-dev-diary/DIARIO_DESARROLLO_IA.md) | Diario de desarrollo con IA (entregable) |
+| [`docs/architecture/pipeline-dataflow.md`](docs/architecture/pipeline-dataflow.md) | Flujo de datos end-to-end |
+| [`docs/GUIA_DEMOSTRACION_PROFESORES.md`](docs/GUIA_DEMOSTRACION_PROFESORES.md) | Guía para la defensa oral |
+
+Levantar el stack completo (incluye ingesta CSV y Spark):
+
+```bash
+cd infra/docker && cp .env.example .env && docker compose --env-file .env up --build
+```
 
 ---
 

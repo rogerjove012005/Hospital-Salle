@@ -66,3 +66,37 @@ CREATE TABLE IF NOT EXISTS data_quality_issues (
   details JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Ingesta CSV (portal + worker)
+CREATE TABLE IF NOT EXISTS csv_import_batches (
+  batch_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  source_filename TEXT,
+  row_count INTEGER NOT NULL DEFAULT 0,
+  sha256 TEXT,
+  quality_summary JSONB,
+  ingest_status TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS csv_import_rows (
+  row_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  batch_id UUID NOT NULL REFERENCES csv_import_batches(batch_id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  fields JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (batch_id, position)
+);
+
+CREATE TABLE IF NOT EXISTS csv_spark_batch_row_counts (
+  batch_id TEXT PRIMARY KEY,
+  row_count BIGINT NOT NULL,
+  computed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS csv_spark_run_summary (
+  id INTEGER PRIMARY KEY,
+  computed_at TIMESTAMPTZ,
+  total_rows BIGINT,
+  batches_with_rows INTEGER
+);

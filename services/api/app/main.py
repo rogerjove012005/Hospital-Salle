@@ -34,6 +34,16 @@ from .dashboard_ops import (
     hospital_report_response,
     list_operational_alerts,
 )
+from .clinic_directory import CreateMedicoIn, CreatePatientIn, DirectoryCreateOut, create_medico_record, create_patient_record
+from .csv_pipeline import FullCsvPipelineResult, run_full_csv_pipeline, run_sql_csv_aggregates
+from .patient_disease_ml import (
+    PatientDiseaseMetrics,
+    PatientDiseasePrediction,
+    get_patient_disease_metrics,
+    predict_all_patients,
+    predict_patient_disease,
+    train_patient_disease_model,
+)
 from .dashboard_imports import (
     CsvBatchDetail,
     CsvImportResult,
@@ -54,7 +64,7 @@ from .dashboard_imports import (
     preview_csv_upload,
     record_pipeline_event,
 )
-from .db import engine, init_auth_schema
+from .db import engine, init_auth_schema, init_import_schema
 
 
 app = FastAPI(title="Hospital Support API", version="0.1.0")
@@ -215,6 +225,7 @@ def health_observability():
 @app.on_event("startup")
 def _startup():
     init_auth_schema()
+    init_import_schema()
     ensure_admin_seed()
 
 
@@ -253,19 +264,42 @@ def admin_list_users(_admin: UserOut = Depends(require_roles("admin"))):
     return list_users()
 
 
+@app.get("/users")
+def list_registered_users(_user: UserOut = Depends(require_roles("admin", "medico"))):
+    """Directorio de cuentas registradas (lectura para personal autorizado)."""
+    return list_users()
+
+
 @app.get("/patients")
 def list_patients(_user: UserOut = Depends(require_roles("admin", "medico"))):
     with engine().connect() as conn:
         rows = conn.execute(
             text(
                 """
-                SELECT patient_id, age, sex, full_name, phone, date_of_birth, created_at
+                SELECT patient_id, age, sex, full_name, phone, date_of_birth,
+                       department, primary_diagnosis, created_at
                 FROM patients
                 ORDER BY created_at DESC
                 """
             )
         ).mappings().all()
     return [dict(r) for r in rows]
+
+
+@app.post("/clinic/patients", response_model=DirectoryCreateOut)
+def clinic_create_patient(
+    req: CreatePatientIn,
+    user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    return create_patient_record(req, user)
+
+
+@app.post("/clinic/medicos", response_model=DirectoryCreateOut)
+def clinic_create_medico(
+    req: CreateMedicoIn,
+    user: UserOut = Depends(require_roles("admin")),
+):
+    return create_medico_record(req, user)
 
 
 @app.get("/patients/me")
@@ -381,6 +415,67 @@ async def imports_csv(
         raise HTTPException(
             status_code=500,
             detail="No se pudo completar la ingesta. Inténtalo de nuevo o contacta soporte.",
+        ) from e
+
+
+@app.post("/imports/csv/pipeline/transform")
+def imports_csv_pipeline_transform(
+    _user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    """Recalcula agregados analíticos (capa transformación) sobre todos los lotes CSV."""
+    return run_sql_csv_aggregates()
+
+
+@app.post("/ml/patient-disease/train", response_model=PatientDiseaseMetrics)
+def ml_train_patient_disease(
+    _user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    """Entrena árbol de decisiones con validación cruzada sobre pacientes con diagnóstico."""
+    return train_patient_disease_model(cv_folds=5)
+
+
+@app.get("/ml/patient-disease/metrics", response_model=PatientDiseaseMetrics)
+def ml_patient_disease_metrics(
+    _user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    return get_patient_disease_metrics()
+
+
+@app.get("/ml/patient-disease/predictions", response_model=list[PatientDiseasePrediction])
+def ml_predict_all(
+    limit: int = 25,
+    _user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    return predict_all_patients(limit=limit)
+
+
+@app.get("/ml/patient-disease/predict/{patient_id}", response_model=PatientDiseasePrediction)
+def ml_predict_one(
+    patient_id: str,
+    _user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    return predict_patient_disease(patient_id)
+
+
+@app.post("/imports/csv/pipeline/full", response_model=FullCsvPipelineResult)
+async def imports_csv_full_pipeline(
+    file: UploadFile = File(...),
+    user: UserOut = Depends(require_roles("admin", "medico")),
+):
+    """
+    Pipeline completo en una sola petición:
+    limpieza (calidad) → ingesta → transformación (agregados) → análisis.
+    """
+    _imports_csv_validate_upload(file)
+    try:
+        return await run_full_csv_pipeline(file, user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        emit_csv_ingestion_failure("Fallo en pipeline CSV completo", e)
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo completar el pipeline. Inténtalo de nuevo.",
         ) from e
 
 

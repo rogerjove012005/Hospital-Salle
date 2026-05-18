@@ -11,6 +11,8 @@ COPY ml/radiology-classifier /src/radiology
 
 ENV MPLBACKEND=Agg
 
+# Si data/cxr_local ya está preparado (scripts/prepare_radiology_dataset.py en el host),
+# el bootstrap entrena con Chest X-Ray real; si no, usa data/synthetic.
 RUN pip install --no-cache-dir \
     numpy pillow scikit-learn joblib matplotlib seaborn pandas scipy \
     && python scripts/bootstrap_model.py

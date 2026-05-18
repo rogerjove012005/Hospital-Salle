@@ -26,8 +26,10 @@ const PORTAL_PAGES = {
   agenda: { roles: ["paciente", "medico", "admin"] },
   records: { roles: ["paciente"] },
   patients: { roles: ["medico", "admin"] },
+  users: { roles: ["medico", "admin"] },
   radiology: { roles: ["medico", "admin"] },
   imports: { roles: ["medico", "admin"] },
+  directory: { roles: ["medico", "admin"] },
   contact: { roles: ["paciente", "medico", "admin"] },
 };
 
@@ -74,6 +76,11 @@ function buildNavSections(role) {
       href: "/patients.html",
       label: role === "admin" ? "Directorio de pacientes" : "Pacientes asignados",
     });
+    sections[1].items.push({
+      id: "users",
+      href: "/users.html",
+      label: "Usuarios registrados",
+    });
   }
 
   const clinica = {
@@ -93,7 +100,10 @@ function buildNavSections(role) {
   if (role === "medico" || role === "admin") {
     sections.push({
       title: "Operaciones hospitalarias",
-      items: [{ id: "imports", href: "/imports.html", label: "Ingesta CSV" }],
+      items: [
+        { id: "directory", href: "/directory.html", label: "Altas clínicas" },
+        { id: "imports", href: "/imports.html", label: "Ingesta CSV" },
+      ],
     });
   }
 
@@ -118,13 +128,19 @@ function getToken() {
   return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || null;
 }
 
-function setToken(t) {
+function setToken(t, persist = true) {
   if (!t) {
     localStorage.removeItem("access_token");
     sessionStorage.removeItem("access_token");
     return;
   }
-  localStorage.setItem("access_token", t);
+  if (persist) {
+    localStorage.setItem("access_token", t);
+    sessionStorage.removeItem("access_token");
+  } else {
+    sessionStorage.setItem("access_token", t);
+    localStorage.removeItem("access_token");
+  }
 }
 
 function redirectLogin() {
@@ -147,7 +163,7 @@ function formatApiDetail(detail) {
   return JSON.stringify(detail);
 }
 
-async function apiJson(path, opts = {}) {
+async function apiFetch(path, opts = {}) {
   const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -176,7 +192,39 @@ async function apiJson(path, opts = {}) {
           : JSON.stringify(body);
     throw new Error(`HTTP ${res.status}: ${msg}`);
   }
+  if (typeof body === "string" && body.trim().startsWith("<!")) {
+    throw new Error("El servidor devolvió HTML en lugar de JSON. Comprueba que la API está en marcha.");
+  }
   return body;
+}
+
+async function apiJson(path, opts = {}) {
+  const body = await apiFetch(path, opts);
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    if (Array.isArray(body)) {
+      throw new Error("Se esperaba un objeto JSON. Use apiJsonList() para listas.");
+    }
+    throw new Error("Respuesta no válida del servidor.");
+  }
+  return body;
+}
+
+async function apiJsonList(path, opts = {}) {
+  const body = await apiFetch(path, opts);
+  if (Array.isArray(body)) return body;
+  if (body === null) return [];
+  throw new Error("Respuesta no válida del servidor.");
+}
+
+function isValidPortalUser(me) {
+  return (
+    me &&
+    typeof me === "object" &&
+    typeof me.role === "string" &&
+    me.role.trim() !== "" &&
+    typeof me.email === "string" &&
+    me.email.trim() !== ""
+  );
 }
 
 function setPageStatus(msg, kind = "neutral") {
@@ -255,6 +303,8 @@ const NAV_ICONS = {
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>',
   patients:
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  users:
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11v2M19 8v6"/></svg>',
   radiology:
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h6M7 13h10"/></svg>',
   imports:
@@ -423,12 +473,20 @@ function wireLogout() {
 
 async function requireAuth() {
   const token = getToken();
-  if (!token) {
+  if (!token || token === "undefined" || token === "null") {
+    setToken(null);
     redirectLogin();
     return null;
   }
   try {
-    return await apiJson("/auth/me");
+    const me = await apiJson("/auth/me");
+    if (!isValidPortalUser(me)) {
+      setToken(null);
+      redirectLogin();
+      return null;
+    }
+    me.role = me.role.trim().toLowerCase();
+    return me;
   } catch {
     setToken(null);
     redirectLogin();

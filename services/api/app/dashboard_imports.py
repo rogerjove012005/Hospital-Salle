@@ -15,6 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from .auth import UserOut
+from .csv_domain_sync import DomainSyncStats, sync_domain_from_csv_rows
 from .db import engine
 
 _log = logging.getLogger(__name__)
@@ -84,6 +85,11 @@ class CsvBatchDetail(BaseModel):
     created_at: datetime | None
     columns: list[str] = Field(default_factory=list)
     rows: list[CsvRowOut]
+    rows_returned: int = 0
+    quality_issue_count: int = 0
+    column_fill: dict[str, float] = Field(default_factory=dict)
+    spark_row_count: int | None = None
+    sample_quality_issues: list["DataQualityIssueOut"] = Field(default_factory=list)
 
     @classmethod
     def build(
@@ -117,11 +123,21 @@ class CsvBatchDetail(BaseModel):
         )
 
 
+class DomainSyncOut(BaseModel):
+    patients_created: int = 0
+    patients_updated: int = 0
+    medicos_created: int = 0
+    medicos_updated: int = 0
+    users_created: int = 0
+    users_linked: int = 0
+
+
 class CsvImportResult(BaseModel):
     batch: CsvBatchListItem
     message: str
     quality_summary: QualitySummary | None = None
     duplicate_file: bool = False
+    domain_sync: DomainSyncOut | None = None
 
 
 class CsvPreviewResult(BaseModel):
@@ -506,13 +522,17 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
             ),
             {"uid": str(uid), "sha": sha},
         ).mappings().fetchone()
+        domain_stats: DomainSyncStats | None = None
+
         if existing:
             item = CsvBatchListItem.from_row(existing)
+            domain_stats = sync_domain_from_csv_rows(conn, cols, data_rows)
             return CsvImportResult(
                 batch=item,
-                message="Este CSV ya fue importado anteriormente. Se devuelve el lote existente.",
+                message="Lote CSV conocido. Datos clínicos y usuarios actualizados en PostgreSQL.",
                 quality_summary=item.quality_summary,
                 duplicate_file=True,
+                domain_sync=DomainSyncOut(**domain_stats.__dict__),
             )
 
         ingest_status = "completed_with_warnings" if quality.alerts else "completed"
@@ -580,6 +600,21 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
             if dup_only or quality.empty_columns:
                 _emit_data_quality_issues(conn, batch_id=bid, quality=quality, fp_map_duplicate_positions=dup_only)
 
+        domain_stats = sync_domain_from_csv_rows(conn, cols, data_rows)
+        _emit_pipeline_event(
+            conn,
+            stage="csv_domain_sync",
+            status="ok",
+            message=(
+                f"BD: +{domain_stats.patients_created} pacientes, "
+                f"↻{domain_stats.patients_updated} actualizados, "
+                f"+{domain_stats.medicos_created} médicos, "
+                f"+{domain_stats.users_created} usuarios"
+            ),
+            payload_ref=bid,
+        )
+        sync_out = DomainSyncOut(**domain_stats.__dict__)
+
     if owns_new_rows:
         try:
             _maybe_archive_csv_raw(batch_id=bid, filename=file.filename or fn, raw_bytes=raw_b)
@@ -588,17 +623,19 @@ async def import_csv_file(file: UploadFile, user: UserOut) -> CsvImportResult:
         item = CsvBatchListItem.from_row(b_row)
         return CsvImportResult(
             batch=item,
-            message=f"Importadas {item.row_count} filas.",
+            message=f"Importadas {item.row_count} filas y sincronizadas tablas clínicas.",
             quality_summary=quality,
             duplicate_file=False,
+            domain_sync=sync_out,
         )
 
     item = CsvBatchListItem.from_row(b_row)
     return CsvImportResult(
         batch=item,
-        message="Este CSV ya fue importado (condición concurrente detectada); se devuelve el lote existente.",
+        message="Lote existente; tablas clínicas actualizadas.",
         quality_summary=item.quality_summary or quality,
         duplicate_file=True,
+        domain_sync=sync_out,
     )
 
 
@@ -691,7 +728,59 @@ def get_csv_batch_detail(
         for k in rowd:
             if k not in columns:
                 columns.append(k)
-    return CsvBatchDetail.build(batch, frows, columns)
+    detail = CsvBatchDetail.build(batch, frows, columns)
+    detail.rows_returned = len(frows)
+
+    ds = f"csv_import:{bid}"
+    with engine().connect() as conn2:
+        detail.quality_issue_count = (
+            conn2.execute(
+                text("SELECT COUNT(*)::int FROM data_quality_issues WHERE dataset = :ds"),
+                {"ds": ds},
+            ).scalar_one()
+            or 0
+        )
+        spark = conn2.execute(
+            text(
+                "SELECT row_count FROM csv_spark_batch_row_counts WHERE batch_id = :bid"
+            ),
+            {"bid": bid},
+        ).scalar()
+        if spark is not None:
+            detail.spark_row_count = int(spark)
+
+        stat_rows = conn2.execute(
+            text(
+                """
+                SELECT fields FROM csv_import_rows
+                WHERE batch_id = :bid
+                ORDER BY position
+                LIMIT 500
+                """
+            ),
+            {"bid": bid},
+        ).mappings().all()
+
+    fill_counts: dict[str, int] = {c: 0 for c in columns}
+    n_stat = len(stat_rows)
+    for sr in stat_rows:
+        raw = sr["fields"]
+        rowd = dict(raw) if isinstance(raw, dict) else {}
+        for c in columns:
+            val = rowd.get(c)
+            if val is not None and str(val).strip() != "":
+                fill_counts[c] = fill_counts.get(c, 0) + 1
+    if n_stat > 0:
+        detail.column_fill = {
+            c: round(fill_counts.get(c, 0) / n_stat, 3) for c in columns
+        }
+
+    try:
+        detail.sample_quality_issues = list_batch_quality_issues(bid, user, limit=8)
+    except HTTPException:
+        detail.sample_quality_issues = []
+
+    return detail
 
 
 def _export_filename_for_batch(batch_row: Mapping[str, Any], batch_id: str) -> str:
@@ -901,7 +990,10 @@ def list_csv_pipeline_events(limit: int = 50) -> list[PipelineEventOut]:
                 """
                 SELECT event_id, stage, status, message, payload_ref, created_at
                 FROM pipeline_events
-                WHERE stage IN ('csv_ingestion', 'csv_ingest_worker', 'spark_csv_aggregate')
+                WHERE stage IN (
+                  'csv_ingestion', 'csv_ingest_worker', 'csv_cleaning', 'csv_transform',
+                  'csv_analysis', 'csv_patient_sync', 'spark_csv_aggregate'
+                )
                 ORDER BY created_at DESC
                 LIMIT :lim
                 """

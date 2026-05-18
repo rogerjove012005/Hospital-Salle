@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "samples": [
+    {
+      "id": "cxr_normal_01.jpg",
+      "url": "/samples/rx/chest/cxr_normal_01.jpg",
+      "expected_class": "SANA",
+      "label": "Sana",
+      "source": "chest_xray/test/NORMAL/NORMAL-1049278-0001.jpeg",
+      "title": "Sana · caso 1"
+    },
+    {
+      "id": "cxr_normal_02.jpg",
+      "url": "/samples/rx/chest/cxr_normal_02.jpg",
+      "expected_class": "SANA",
+      "label": "Sana",
+      "source": "chest_xray/test/NORMAL/NORMAL-1110860-0001.jpeg",
+      "title": "Sana · caso 2"
+    },
+    {
+      "id": "cxr_normal_03.jpg",
+      "url": "/samples/rx/chest/cxr_normal_03.jpg",
+      "expected_class": "SANA",
+      "label": "Sana",
+      "source": "chest_xray/test/NORMAL/NORMAL-11419-0001.jpeg",
+      "title": "Sana · caso 3"
+    },
+    {
+      "id": "cxr_normal_04.jpg",
+      "url": "/samples/rx/chest/cxr_normal_04.jpg",
+      "expected_class": "SANA",
+      "label": "Sana",
+      "source": "chest_xray/test/NORMAL/NORMAL-115218-0001.jpeg",
+      "title": "Sana · caso 4"
+    },
+    {
+      "id": "cxr_normal_05.jpg",
+      "url": "/samples/rx/chest/cxr_normal_05.jpg",
+      "expected_class": "SANA",
+      "label": "Sana",
+      "source": "chest_xray/test/NORMAL/NORMAL-1160949-0001.jpeg",
+      "title": "Sana · caso 5"
+    },
+    {
+      "id": "cxr_normal_06.jpg",
+      "url": "/samples/rx/chest/cxr_normal_06.jpg",
+      "expected_class": "SANA",
+      "label": "Sana",
+      "source": "chest_xray/test/NORMAL/NORMAL-1212407-0001.jpeg",
+      "title": "Sana · caso 6"
+    },
+    {
+      "id": "cxr_pneumonia_01.jpg",
+      "url": "/samples/rx/chest/cxr_pneumonia_01.jpg",
+      "expected_class": "NEUMONIA",
+      "label": "Neumonía",
+      "source": "chest_xray/test/PNEUMONIA/BACTERIA-1135262-0001.jpeg",
+      "title": "Neumonía · caso 1"
+    },
+    {
+      "id": "cxr_pneumonia_02.jpg",
+      "url": "/samples/rx/chest/cxr_pneumonia_02.jpg",
+      "expected_class": "NEUMONIA",
+      "label": "Neumonía",
+      "source": "chest_xray/test/PNEUMONIA/BACTERIA-1135262-0002.jpeg",
+      "title": "Neumonía · caso 2"
+    },
+    {
+      "id": "cxr_pneumonia_03.jpg",
+      "url": "/samples/rx/chest/cxr_pneumonia_03.jpg",
+      "expected_class": "NEUMONIA",
+      "label": "Neumonía",
+      "source": "chest_xray/test/PNEUMONIA/BACTERIA-1135262-0003.jpeg",
+      "title": "Neumonía · caso 3"
+    },
+    {
+      "id": "cxr_pneumonia_04.jpg",
+      "url": "/samples/rx/chest/cxr_pneumonia_04.jpg",
+      "expected_class": "NEUMONIA",
+      "label": "Neumonía",
+      "source": "chest_xray/test/PNEUMONIA/BACTERIA-1135262-0004.jpeg",
+      "title": "Neumonía · caso 4"
+    },
+    {
+      "id": "cxr_pneumonia_05.jpg",
+      "url": "/samples/rx/chest/cxr_pneumonia_05.jpg",
+      "expected_class": "NEUMONIA",
+      "label": "Neumonía",
+      "source": "chest_xray/test/PNEUMONIA/BACTERIA-1220485-0001.jpeg",
+      "title": "Neumonía · caso 5"
+    },
+    {
+      "id": "cxr_pneumonia_06.jpg",
+      "url": "/samples/rx/chest/cxr_pneumonia_06.jpg",
+      "expected_class": "NEUMONIA",
+      "label": "Neumonía",
+      "source": "chest_xray/test/PNEUMONIA/BACTERIA-1351146-0001.jpeg",
+      "title": "Neumonía · caso 6"
+    },
+    {
+      "id": "cxr_covid_01.png",
+      "url": "/samples/rx/chest/cxr_covid_01.png",
+      "expected_class": "COVID-19",
+      "label": "COVID-19",
+      "source": "datos_prueba/radiografias/radiografia_covid_demo.png",
+      "title": "COVID-19 · demo"
+    }
+  ]
+}

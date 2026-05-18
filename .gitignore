@@ -17,6 +17,10 @@ venv/
 !.env.example
 
 # Data (do not commit heavy or sensitive data)
+infra/docker/spark-processed-output/
+ml/radiology-classifier/data/synthetic/**/*.png
+!data/demo/**/*.png
+!datos_prueba/**/*.png
 data/external/
 data/raw/
 data/staging/
@@ -25,7 +29,18 @@ data/warehouse/
 data/models/
 *.parquet
 *.csv
+!data/demo/**/*.csv
+!datos_prueba/**/*.csv
+!pipelines/ingestion/samples/*.csv
 *.json
+!data/demo/**/*.json
+!services/frontend/public/samples/**/*.json
+!services/api/app/models/**/*.json
+
+# Datasets locales pesados (usar scripts/prepare_radiology_dataset.py)
+datos_prueba/radiografias/chest_xray/
+ml/radiology-classifier/data/cxr_local/
+*.pkl
 *.db
 *.sqlite
 *.sqlite3

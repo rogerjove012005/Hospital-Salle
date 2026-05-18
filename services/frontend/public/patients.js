@@ -20,8 +20,7 @@ function renderPatientRow(p) {
       : `Pacientes bajo su supervisión · ${me.medico_id || "sin ID médico"}`;
 
   try {
-    const patients = await apiJson("/patients");
-    const list = Array.isArray(patients) ? patients : [];
+    const list = await apiJsonList("/patients");
     portalQs("#patientsBody").innerHTML = list.length
       ? list.map(renderPatientRow).join("")
       : `<tr><td colspan="5">No hay pacientes registrados en el sistema.</td></tr>`;

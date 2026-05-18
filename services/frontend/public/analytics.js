@@ -150,13 +150,53 @@ async function loadDashboard() {
   if (role === "admin" || role === "medico") {
     if (charts) charts.hidden = false;
     await Promise.all([renderSparkChart(), renderRxChart()]);
-    const alerts = await apiJson("/alerts?limit=25");
+    const alerts = await apiJsonList("/alerts?limit=25");
     renderAlerts(alerts);
   } else {
     if (charts) charts.hidden = true;
     renderAlerts([]);
   }
   setPageStatus("Centro de control actualizado.", "ok");
+}
+
+function reportFilename() {
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  return `informe-hospital-${stamp}.html`;
+}
+
+function downloadHospitalReportHtml(html, filename) {
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || reportFilename();
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function writeHospitalReportToWindow(popup, html) {
+  if (!popup || popup.closed) return false;
+  popup.document.open();
+  popup.document.write(html);
+  popup.document.close();
+  return true;
+}
+
+async function fetchHospitalReportHtml() {
+  const token = getToken();
+  const res = await fetch(`${PORTAL_API_BASE}/reports/hospital`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`HTTP ${res.status}: ${detail.slice(0, 160)}`);
+  }
+  return res.text();
 }
 
 (async function boot() {
@@ -168,20 +208,34 @@ async function loadDashboard() {
     if (ctx.me.role === "paciente") {
       reportBtn.hidden = true;
     } else {
-      reportBtn.addEventListener("click", async () => {
-        try {
-          const token = getToken();
-          const res = await fetch(`${PORTAL_API_BASE}/reports/hospital`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const html = await res.text();
-          const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-          window.open(URL.createObjectURL(blob), "_blank", "noopener");
-          setPageStatus("Informe generado.", "ok");
-        } catch (e) {
-          setPageStatus(String(e.message || e), "error");
+      reportBtn.addEventListener("click", () => {
+        const popup = window.open("", "_blank", "noopener,noreferrer");
+        if (popup) {
+          popup.document.write(
+            "<!doctype html><html lang='es'><head><meta charset='utf-8'/><title>Informe</title></head>" +
+              "<body style='font-family:system-ui,sans-serif;padding:2rem;color:#0f766e'>" +
+              "<p>Generando informe hospitalario…</p></body></html>"
+          );
         }
+        setPageStatus("Generando informe…");
+        void (async () => {
+          try {
+            const html = await fetchHospitalReportHtml();
+            const name = reportFilename();
+            if (writeHospitalReportToWindow(popup, html)) {
+              setPageStatus("Informe abierto en una nueva pestaña.", "ok");
+            } else {
+              downloadHospitalReportHtml(html, name);
+              setPageStatus(
+                "Informe descargado. Si Safari bloqueó la ventana, abra el fichero desde Descargas.",
+                "ok"
+              );
+            }
+          } catch (e) {
+            if (popup && !popup.closed) popup.close();
+            setPageStatus(String(e.message || e), "error");
+          }
+        })();
       });
     }
   }
